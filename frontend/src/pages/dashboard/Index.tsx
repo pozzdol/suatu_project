@@ -102,7 +102,7 @@ function DashboardIndexPage() {
 
   return (
     <div className="pb-14 md:pb-0 min-h-[calc(100vh-64px)]">
-      <div className="text-primary grid grid-cols-1 gap-2 md:flex md:justify-between md:items-center">
+      <div className="text-primary-500 grid grid-cols-1 gap-2 md:flex md:justify-between md:items-center">
         <div>
           <h1 className="text-3xl font-semibold">{title}</h1>
           <p>{subTitle}</p>

@@ -11,12 +11,12 @@ Route::post('/login', [AuthController::class, 'login']);
 
 // Routes dengan autentikasi
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/profile', [AuthController::class, 'profile']);
 
     // Permit Routes
     Route::post('/validation/permit/{access}', [PermitController::class, 'permit']);
 
     // Windows Routes
-    Route::get('/general/setup/windows', [WindowsController::class, 'setup']);
+    Route::get('/general/setup/windows', [WindowsController::class, 'menu']);
 });

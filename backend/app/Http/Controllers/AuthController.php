@@ -6,21 +6,35 @@ use App\Models\User;
 use App\Traits\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
     use ApiResponse;
 
+    public function profile()
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return $this->apiError('User not found.', null, 404);
+        }
+
+        return $this->apiResponse($user);
+    }
+
     public function login(Request $request)
     {
         $data = $request->validate([
             'email' => ['required', 'string'],
             'password' => ['required', 'string'],
+            'remember' => ['sometimes', 'boolean'],
         ]);
 
         $email = base64_decode($data['email'], true) ?: $data['email'];
         $password = base64_decode($data['password'], true) ?: $data['password'];
+        $remember = $data['remember'] ?? false;
 
         if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->apiError('Email address is not valid.', null, 422);
@@ -36,10 +50,10 @@ class AuthController extends Controller
         //     return $this->apiError('Account is not active.', null, 403);
         // }
 
-        $expiresAt = Carbon::now()->addHours(6);
+        $expiresAt = $remember ? Carbon::now()->addYear() : Carbon::now()->addHours(6);
         $plain = $user->createToken('api', ['*'], $expiresAt)->plainTextToken;
 
-        $minutes = 6 * 60;
+        $minutes = $remember ? (60 * 24 * 365) : (6 * 60);
         $secure = config('app.env') !== 'local';
         $cookieToken = cookie('COOKIE', $plain, $minutes, '/', null, $secure, false, false, 'Lax');
         $cookieExpiry = cookie('COOKIE_EXPIRY', $expiresAt->toDateTimeString(), $minutes, '/', null, $secure, false, false, 'Lax');
@@ -53,6 +67,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
             ],
+            'remember' => (bool) $remember,
         ];
 
         return $this->apiResponse($payload, 'Logged in successfully')

@@ -1,5 +1,5 @@
 import { login } from "@/utils/auth";
-import { Input } from "antd";
+import { Checkbox, Input, type CheckboxChangeEvent } from "antd";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
@@ -10,6 +10,7 @@ function Login() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    remember: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   // STATE MANAGEMENT END
@@ -19,6 +20,11 @@ function Login() {
   // FUNCTION
   const handleInputChange = (field: "email" | "password", value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleRememberChange = (e: CheckboxChangeEvent) => {
+    // Ubah tipe parameter
+    setFormData((prev) => ({ ...prev, remember: e.target.checked }));
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -38,6 +44,7 @@ function Login() {
       const response = await login({
         email: encodedEmail,
         password: encodedPassword,
+        remember: formData.remember,
       });
 
       if (response.success) {
@@ -79,7 +86,7 @@ function Login() {
             autoComplete="email"
             value={formData.email}
             onChange={(e) => handleInputChange("email", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded hover:border-primary! focus:border-primary!"
+            className="w-full p-2 border border-gray-300 rounded hover:border-primary-500! focus:border-primary-500!"
             disabled={isSubmitting}
           />
           <Input
@@ -89,9 +96,19 @@ function Login() {
             autoComplete="current-password"
             value={formData.password}
             onChange={(e) => handleInputChange("password", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded hover:border-primary! focus:border-primary!"
+            className="w-full p-2 border border-gray-300 rounded hover:border-primary-500! focus:borprimary-500mary!"
             disabled={isSubmitting}
           />
+
+          <div className="flex items-center justify-between">
+            <Checkbox
+              checked={formData.remember}
+              onChange={handleRememberChange}
+              className="text-sm text-slate-600"
+            >
+              Remember me
+            </Checkbox>
+          </div>
 
           <button
             type="submit"
@@ -100,7 +117,7 @@ function Login() {
               !formData.email.trim() ||
               !formData.password.trim()
             }
-            className="w-full bg-primary text-white py-2 rounded hover:bg-primary/80 cursor-pointer transition-colors disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#b3a0fc]"
+            className="w-full bg-primary-500 text-white py-2 rounded hoverprimary-500mary/80 cursor-pointer transition-colors disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#b3a0fc]"
           >
             {isSubmitting ? "Memproses..." : "Login"}
           </button>

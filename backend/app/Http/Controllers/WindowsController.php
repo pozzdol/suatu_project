@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Role;
+use App\Models\RoleWindow;
 use App\Models\Window;
 use App\Traits\ApiResponse;
 use Illuminate\Support\Facades\Auth;
@@ -22,10 +23,12 @@ class WindowsController extends Controller
                 return $this->apiError('Role not found for the user.', null, 404);
             }
 
+            $roleWindows = RoleWindow::where('role_id', $role->id)->pluck('window_id');
+
             // Get all windows ordered by order field
             $windows = Window::orderBy('data_order_id', 'asc')
                 ->where('deleted', null)
-                ->where('role_id', $role->id)
+                ->whereIn('id', $roleWindows)
                 ->get();
 
             // Build menu structure
@@ -72,6 +75,7 @@ class WindowsController extends Controller
             'icon' => $data['icon'] ?? '',
             'order' => (int) ($data['order'] ?? 0),
             'type' => $data['type'] ?? 'window',
+            'url' => $data['url'] ?? '',
         ];
 
         // Add subMenu jika ada children
