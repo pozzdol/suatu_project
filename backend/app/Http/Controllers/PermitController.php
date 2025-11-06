@@ -48,6 +48,7 @@ class PermitController extends Controller
                 'icon' => $window->data['icon'],
                 'type' => $window->data['type'],
                 'order' => $window->data['order'],
+                'url' => $window->data['url'],
                 'isParent' =>  (bool)$window->data['isParent'],
             ],
         ];
