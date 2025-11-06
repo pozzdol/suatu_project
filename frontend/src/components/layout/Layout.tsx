@@ -6,6 +6,7 @@ import {
   CaretUpIcon,
   GearIcon,
   HouseIcon,
+  SidebarIcon,
   SignOutIcon,
   SpinnerBallIcon,
   UserCircleGearIcon,
@@ -30,17 +31,25 @@ interface MenuItem {
 }
 
 function Layout({ children, isActive }: LayoutProps) {
+  const navigate = useNavigate();
   const [sidebarMenu, setSidebarMenu] = useState<MenuItem[]>([]);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [profile, setProfile] = useState<{ [key: string]: string }>({});
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    const saved = localStorage.getItem("isSidebarOpen");
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem("expandedGroups");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoadingLogout, setIsLoadingLogout] = useState(false);
-  const navigate = useNavigate();
 
   const fetchMenu = async () => {
     try {
-      const response = await requestApi.get<any>("/general/setup/windows");
+      const response = await requestApi.get("/general/setup/windows");
 
-      if (response.data.success) {
+      if (response.data.success && response.data.data?.menuList) {
         setSidebarMenu(response.data.data.menuList);
       } else {
         console.error("Failed to fetch menu:", response.data.message);
@@ -52,9 +61,38 @@ function Layout({ children, isActive }: LayoutProps) {
     }
   };
 
+  const fetchProfile = async () => {
+    try {
+      const res = await requestApi.get("/profile", { withCredentials: true });
+
+      if (res.data.success) {
+        const data = res.data.data;
+        setProfile(data);
+      } else {
+        console.error("Failed to fetch profile:", res.data.message);
+        toast.error("Failed to fetch profile");
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+      toast.error("Failed to fetch profile");
+    }
+  };
+
   useEffect(() => {
     fetchMenu();
+    fetchProfile();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("isSidebarOpen", JSON.stringify(isSidebarOpen));
+  }, [isSidebarOpen]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      "expandedGroups",
+      JSON.stringify(Array.from(expandedGroups))
+    );
+  }, [expandedGroups]);
 
   const toggleGroup = (id: string) => {
     setExpandedGroups((prev) => {
@@ -92,7 +130,7 @@ function Layout({ children, isActive }: LayoutProps) {
 
   const renderMenuItem = (menu: MenuItem, isSub: boolean = false) => {
     const Icon = getIcon(menu.icon);
-    const isExpanded = expandedGroups.has(menu.id);
+    const isGroupExpanded = expandedGroups.has(menu.id);
     const isGroup = menu.type === "group";
 
     return (
@@ -100,36 +138,68 @@ function Layout({ children, isActive }: LayoutProps) {
         {isGroup ? (
           <button
             onClick={() => toggleGroup(menu.id)}
-            className={`flex items-center gap-2 font-medium w-full text-left ${
-              isActive === menu.url ? "text-gray-600 bg-white" : "text-gray-800"
-            } hover:text-gray-600 hover:bg-white/60 rounded-lg px-3 py-2 transition-colors duration-200 cursor-pointer`}
+            className={`flex items-center ${
+              isSidebarOpen ? "gap-2" : "justify-center"
+            } font-medium w-full text-left ${
+              isActive === menu.url
+                ? "text-gray-600 bg-white"
+                : "text-secondary-700"
+            } hover:text-gray-600 hover:bg-background rounded-lg px-3 py-2 transition-colors duration-200 cursor-pointer overflow-hidden`}
           >
-            <Icon size={24} weight="duotone" className="text-primary-500" />
-            {menu.name}
+            <Icon
+              size={24}
+              weight="duotone"
+              className="text-primary-500 shrink-0"
+            />
+            <div
+              className={`flex-1 transition-all duration-300 overflow-hidden whitespace-nowrap ${
+                isSidebarOpen ? "opacity-100 max-w-full" : "opacity-0 max-w-0"
+              }`}
+            >
+              {menu.name}
+            </div>
             <CaretUpIcon
               size={16}
-              className={`ml-auto ${
-                isExpanded ? "" : "rotate-180"
-              } transition-transform duration-200`}
+              className={`shrink-0 ${
+                isGroupExpanded ? "" : "rotate-180"
+              } transition-all duration-200 ${
+                isSidebarOpen ? "opacity-100 max-w-full" : "opacity-0 max-w-0"
+              }`}
             />
           </button>
         ) : (
           <a
             href={menu.url}
-            className={`flex items-center gap-2 font-medium ${
-              isActive === menu.url ? "text-gray-600 bg-white" : "text-gray-800"
-            } hover:text-gray-600 hover:bg-white/60 rounded-lg px-3 py-2 transition-colors duration-200 ${
+            className={`flex items-center ${
+              isSidebarOpen ? "gap-2" : "justify-center"
+            } font-medium ${
+              isActive === menu.url
+                ? "text-gray-600 bg-background"
+                : "text-secondary-700"
+            } hover:text-gray-600 hover:bg-background rounded-lg px-3 py-2 transition-colors duration-200 overflow-hidden ${
               isSub ? "ml-4" : ""
             }`}
           >
-            <Icon size={24} weight="duotone" className="text-primary-500" />
-            {menu.name}
+            <Icon
+              size={24}
+              weight="duotone"
+              className="text-primary-500 shrink-0"
+            />
+            <span
+              className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${
+                isSidebarOpen ? "opacity-100 max-w-full" : "opacity-0 max-w-0"
+              }`}
+            >
+              {menu.name}
+            </span>
           </a>
         )}
         {isGroup && menu.subMenu && (
           <ul
             className={`ml-4 space-y-1 overflow-hidden transition-all duration-300 ease-in-out ${
-              isExpanded ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
+              isGroupExpanded && isSidebarOpen
+                ? "max-h-screen opacity-100"
+                : "max-h-0 opacity-0"
             }`}
           >
             {menu.subMenu.map((sub) => renderMenuItem(sub, true))}
@@ -142,24 +212,44 @@ function Layout({ children, isActive }: LayoutProps) {
   return (
     <div className="bg-background">
       <div className="flex w-screen max-w-screen h-screen overflow-hidden">
-        <div className="w-64 mx-4 h-[calc(100vh-1.5rem)] my-auto space-y-4">
-          <div className="mt-1 flex items-center gap-3 h-16">
-            <img src={logoApp} alt="Logo" className="w-10 h-10" />
-            <div className="text-2xl font-medium text-gray-800">
+        <div
+          className={`h-screen bg-white border-r border-gray-200 pl-4 space-y-4 transition-all duration-300 overflow-hidden ${
+            isSidebarOpen ? "w-64" : "w-16"
+          }`}
+        >
+          <div
+            className={`flex ${
+              isSidebarOpen ? "justify-start" : "justify-center"
+            } items-center gap-3 h-16 whitespace-nowrap`}
+          >
+            <img src={logoApp} alt="Logo" className="w-10 h-10 shrink-0" />
+            <div
+              className={`text-xl leading-6 font-medium text-secondary-700 transition-all duration-300 overflow-hidden ${
+                isSidebarOpen ? "opacity-100 max-w-full" : "opacity-0 max-w-0"
+              }`}
+            >
               {import.meta.env.VITE_APP_NAME}
             </div>
           </div>
-          <nav>
+          <nav className="overflow-y-auto h-[calc(100vh-5rem)] pr-4">
             <ul className="space-y-2">
               {sidebarMenu.map((menu) => renderMenuItem(menu))}
             </ul>
           </nav>
         </div>
-        <div className="w-full mr-4 space-y-4">
-          <div className="mt-4 rounded-2xl h-16 bg-white text-gray-800 flex items-center pl-4 pr-2">
-            <div className="">
-              <h1 className="font-medium">My Application</h1>
-            </div>
+        <div className="flex-1 flex flex-col h-screen overflow-auto">
+          <div className="border-b border-gray-200 h-16 sticky top-0 z-99999 w-full bg-white text-secondary-700 flex items-center pl-4 pr-2 shrink-0">
+            <button
+              className="p-2 rounded-lg hover:bg-background cursor-pointer transition-colors duration-200"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            >
+              <SidebarIcon
+                weight="duotone"
+                className={`w-6 h-6 text-primary-700 transition-transform duration-300 ${
+                  isSidebarOpen ? "" : "rotate-180"
+                }`}
+              />
+            </button>
             <div className="ml-auto flex items-center gap-2 h-full py-2">
               <div className="relative">
                 <button
@@ -171,16 +261,18 @@ function Layout({ children, isActive }: LayoutProps) {
                   } transition-colors duration-300`}
                 >
                   <img
-                    src={`https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=udin`}
+                    src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${profile?.name}`}
                     alt="Avatar"
                     className="h-8 w-8 rounded-full object-cover border-2 border-primary-500"
                   />
                   <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold text-gray-800">
-                      udin
+                    <span
+                      className={`text-sm font-semibold text-secondary-700`}
+                    >
+                      {profile?.name}
                     </span>
                     <span className="text-xs text-gray-500">
-                      udin@example.com
+                      {profile?.email}
                     </span>
                   </div>
                 </button>
@@ -192,15 +284,15 @@ function Layout({ children, isActive }: LayoutProps) {
                       : "opacity-0 scale-95 -translate-y-2 pointer-events-none"
                   }`}
                 >
-                  <div className="bg-linear-to-br from-primary-50 via-background to-white rounded-t-2xl p-6 border-b border-gray-200/50">
+                  <div className="bg-linear-to-br from-primary-50 to-white rounded-t-2xl p-6 border-b border-gray-200/50">
                     <div className="flex flex-col items-center text-center">
                       <img
-                        src={`https://api.dicebear.com/9.x/avataaars-neutral/svg?seed=udin`}
+                        src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${profile?.name}`}
                         alt={"User Avatar"}
                         className="w-16 h-16 rounded-full object-cover"
                       />
-                      <div className="text-lg font-semibold text-gray-800">
-                        udin
+                      <div className="text-lg font-semibold text-secondary-700">
+                        {profile?.name}
                       </div>
                       <div className="text-sm text-gray-600">
                         PT Tata Metal Lestari
@@ -235,7 +327,7 @@ function Layout({ children, isActive }: LayoutProps) {
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-2xl p-6">{children}</div>
+          <div className="flex-1 bg-background">{children}</div>
         </div>
       </div>
     </div>
