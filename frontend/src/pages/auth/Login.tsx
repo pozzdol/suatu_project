@@ -96,7 +96,7 @@ function Login() {
             autoComplete="current-password"
             value={formData.password}
             onChange={(e) => handleInputChange("password", e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded hover:border-primary-500! focus:borprimary-500mary!"
+            className="w-full p-2 border border-gray-300 rounded hover:border-primary-500! focus:border-primary-500!"
             disabled={isSubmitting}
           />
 

@@ -3,15 +3,28 @@
 
 @theme {
   --default-font-family: "Poppins", sans-serif;
-  --color-primary-50: #f0f0ff;
-  --color-primary-100: #e0e0ff;
-  --color-primary-200: #c1c1ff;
-  --color-primary-300: #a2a2ff;
-  --color-primary-400: #8383ff;
-  --color-primary-500: #724dff; /* Base color */
-  --color-primary-600: #5a3de6;
-  --color-primary-700: #4a32cc;
-  --color-primary-800: #3a27b3;
-  --color-primary-900: #2a1c99;
-  --color-background: #f5f5f5;
+
+  --color-primary-50: #e6f9f2;
+  --color-primary-100: #ccf3e5;
+  --color-primary-200: #99e7cb;
+  --color-primary-300: #66dbb1;
+  --color-primary-400: #33cf97;
+  --color-primary-500: #30d681; /* Base color */
+  --color-primary-600: #28ba6f;
+  --color-primary-700: #209e57;
+  --color-primary-800: #18823f;
+  --color-primary-900: #106627;
+
+  --color-secondary-50: #f3f4f7;
+  --color-secondary-100: #e7e9ee;
+  --color-secondary-200: #cfd4de;
+  --color-secondary-300: #aab3c5;
+  --color-secondary-400: #7a8bae;
+  --color-secondary-500: #55678b;
+  --color-secondary-600: #2d3f62;
+  --color-secondary-700: #121927; /* base (tetap) */
+  --color-secondary-800: #0c121d;
+  --color-secondary-900: #090d16;
+
+  --color-background: #f1f3f4;
 }
