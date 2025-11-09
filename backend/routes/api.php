@@ -1,10 +1,9 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\WindowsController;
+use Illuminate\Support\Facades\Route;
 
 // Routes tanpa autentikasi
 Route::post('/login', [AuthController::class, 'login']);
@@ -19,4 +18,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Windows Routes
     Route::get('/general/setup/windows', [WindowsController::class, 'menu']);
+    Route::get('/general/setup/windows/parents', [WindowsController::class, 'parent']);
+
+    Route::get('/general/setup/windows/list', [WindowsController::class, 'list']);
+    Route::get('/general/setup/windows/edit/{id}', [WindowsController::class, 'show']);
+    Route::put('/general/setup/windows/edit/{id}', [WindowsController::class, 'update']);
+    Route::post('/general/setup/windows', [WindowsController::class, 'create']);
+
 });

@@ -43,9 +43,12 @@ function Layout({ children, isActive }: LayoutProps) {
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isLoadingLogout, setIsLoadingLogout] = useState(false);
 
   const fetchMenu = async () => {
+    setIsLoadingMenu(true);
     try {
       const response = await requestApi.get("/general/setup/windows");
 
@@ -58,10 +61,13 @@ function Layout({ children, isActive }: LayoutProps) {
     } catch (error) {
       console.error("Failed to fetch menu:", error);
       toast.error("Failed to fetch menu");
+    } finally {
+      setIsLoadingMenu(false);
     }
   };
 
   const fetchProfile = async () => {
+    setIsLoadingProfile(true);
     try {
       const res = await requestApi.get("/profile", { withCredentials: true });
 
@@ -75,6 +81,8 @@ function Layout({ children, isActive }: LayoutProps) {
     } catch (error) {
       console.error("Failed to fetch profile:", error);
       toast.error("Failed to fetch profile");
+    } finally {
+      setIsLoadingProfile(false);
     }
   };
 
@@ -127,6 +135,13 @@ function Layout({ children, isActive }: LayoutProps) {
       setIsLoadingLogout(false);
     }
   };
+
+  const SkeletonMenuItem = () => (
+    <li className="flex items-center gap-2 px-3 py-2">
+      <div className="h-6 w-6 rounded-full bg-gray-300 animate-pulse shrink-0"></div>
+      <div className="h-4 w-32 bg-gray-300 animate-pulse rounded"></div>
+    </li>
+  );
 
   const renderMenuItem = (menu: MenuItem, isSub: boolean = false) => {
     const Icon = getIcon(menu.icon);
@@ -233,12 +248,16 @@ function Layout({ children, isActive }: LayoutProps) {
           </div>
           <nav className="overflow-y-auto h-[calc(100vh-5rem)] pr-4">
             <ul className="space-y-2">
-              {sidebarMenu.map((menu) => renderMenuItem(menu))}
+              {isLoadingMenu
+                ? Array.from({ length: 6 }).map((_, index) => (
+                    <SkeletonMenuItem key={index} />
+                  ))
+                : sidebarMenu.map((menu) => renderMenuItem(menu))}
             </ul>
           </nav>
         </div>
         <div className="flex-1 flex flex-col h-screen overflow-auto">
-          <div className="border-b border-gray-200 h-16 sticky top-0 z-99999 w-full bg-white text-secondary-700 flex items-center pl-4 pr-2 shrink-0">
+          <div className="border-b border-gray-200 h-16 sticky top-0 z-1000 w-full bg-white text-secondary-700 flex items-center pl-4 pr-2 shrink-0">
             <button
               className="p-2 rounded-lg hover:bg-background cursor-pointer transition-colors duration-200"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -252,30 +271,43 @@ function Layout({ children, isActive }: LayoutProps) {
             </button>
             <div className="ml-auto flex items-center gap-2 h-full py-2">
               <div className="relative">
-                <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-2 cursor-pointer ${
-                    isUserMenuOpen
-                      ? "bg-background shadow-sm"
-                      : "hover:bg-background"
-                  } transition-colors duration-300`}
-                >
-                  <img
-                    src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${profile?.name}`}
-                    alt="Avatar"
-                    className="h-8 w-8 rounded-full object-cover border-2 border-primary-500"
-                  />
-                  <div className="flex flex-col text-left">
-                    <span
-                      className={`text-sm font-semibold text-secondary-700`}
-                    >
-                      {profile?.name}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {profile?.email}
-                    </span>
+                {isLoadingProfile ? (
+                  // Skeleton loading: Mirip struktur button tapi dengan animasi pulse
+                  <div className="flex items-center gap-3 rounded-xl px-4 py-2">
+                    <div className="h-8 w-8 rounded-full bg-gray-300 animate-pulse"></div>
+                    <div className="flex flex-col text-left gap-1">
+                      <div className="h-4 w-24 bg-gray-300 animate-pulse rounded"></div>
+                      <div className="h-3 w-32 bg-gray-300 animate-pulse rounded"></div>
+                    </div>
                   </div>
-                </button>
+                ) : (
+                  // Button asli, hanya tampil jika tidak loading
+                  <button
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                    className={`flex items-center gap-3 rounded-xl px-4 py-2 cursor-pointer ${
+                      isUserMenuOpen
+                        ? "bg-background shadow-sm"
+                        : "hover:bg-background"
+                    } transition-colors duration-300`}
+                    disabled={isLoadingProfile} // Disable saat loading
+                  >
+                    <img
+                      src={`https://api.dicebear.com/9.x/thumbs/svg?seed=${profile?.name}`}
+                      alt="Avatar"
+                      className="h-8 w-8 rounded-full object-cover border-2 border-primary-500"
+                    />
+                    <div className="flex flex-col text-left">
+                      <span
+                        className={`text-sm font-semibold text-secondary-700`}
+                      >
+                        {profile?.name}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {profile?.email}
+                      </span>
+                    </div>
+                  </button>
+                )}
 
                 <div
                   className={`absolute z-50 right-0 top-full mt-2 w-72 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 transform origin-top-right transition-all duration-300 ${
@@ -327,7 +359,9 @@ function Layout({ children, isActive }: LayoutProps) {
               </div>
             </div>
           </div>
-          <div className="flex-1 bg-background">{children}</div>
+          <div className="flex-1 bg-background min-h-[calc(100vh-64px)]">
+            {children}
+          </div>
         </div>
       </div>
     </div>

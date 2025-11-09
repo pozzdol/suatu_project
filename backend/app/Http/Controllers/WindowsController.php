@@ -6,12 +6,16 @@ use App\Models\Role;
 use App\Models\RoleWindow;
 use App\Models\Window;
 use App\Traits\ApiResponse;
+use App\Traits\Auditable;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class WindowsController extends Controller
 {
     use ApiResponse;
+    use Auditable;
 
     public function menu()
     {
@@ -36,7 +40,7 @@ class WindowsController extends Controller
 
             return $this->apiResponse(['menuList' => $menuList], 'Menu retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Menu retrieval error: ' . $e->getMessage());
+            Log::error('Menu retrieval error: '.$e->getMessage());
 
             return $this->apiError('Failed to retrieve menu.', null, 500);
         }
@@ -98,9 +102,146 @@ class WindowsController extends Controller
         return $menuItem;
     }
 
-    public function setup()
+    public function list()
     {
-        // Implement setup method jika diperlukan
-        return $this->apiResponse(null, 'Setup endpoint');
+        try {
+            $windows = Window::where('deleted', null)
+                ->orderBy('data_order_id', 'asc')
+                ->get();
+
+            $payload = $windows->map(function ($window) {
+                return [
+                    'id' => $window->id,
+                    'created' => $window->created,
+                    'updated' => $window->updated,
+                    'deleted' => $window->deleted,
+                    'url' => $window->data['url'] ?? '',
+                    'icon' => $window->data['icon'] ?? '',
+                    'name' => $window->data['name'] ?? '',
+                    'type' => $window->data['type'] ?? '',
+                    'order' => $window->data_order_id ?? 0,
+                    'access' => $window->data['access'] ?? '',
+                    'data_isParent' => $window->data['isParent'] ?? false,
+                    'data_parent_id' => $window->data['parent'] ?? null,
+                ];
+            });
+
+            return $this->apiResponse(['windows' => $payload], 'Windows retrieved successfully.');
+        } catch (\Exception $e) {
+            Log::error('Windows retrieval error: '.$e->getMessage());
+
+            return $this->apiError('Failed to retrieve windows.', null, 500);
+        }
+    }
+
+    public function show($id)
+    {
+        try {
+            $windows = Window::where('id', $id)
+                ->where('deleted', null)
+                ->first();
+
+            if (! $windows) {
+                return $this->apiError('Window not found.', null, 404);
+            }
+
+            $payload = [
+                'id' => $windows->id,
+                'created' => $windows->created,
+                'updated' => $windows->updated,
+                'deleted' => $windows->deleted,
+                'url' => $windows->data['url'] ?? '',
+                'icon' => $windows->data['icon'] ?? '',
+                'name' => $windows->data['name'] ?? '',
+                'type' => $windows->data['type'] ?? '',
+                'order' => $windows->data_order_id ?? 0,
+                'access' => $windows->data['access'] ?? '',
+                'data_isParent' => $windows->data['isParent'] ?? false,
+                'data_parent_id' => $windows->data['parent'] ?? null,
+            ];
+
+            return $this->apiResponse(['window' => $payload], 'Window retrieved successfully.');
+        } catch (\Exception $e) {
+            Log::error('Window retrieval error: '.$e->getMessage());
+
+            return $this->apiError('Failed to retrieve window.', null, 500);
+        }
+    }
+
+    public function create(Request $request)
+    {
+        $rules = [
+            'name' => 'required|string|max:255',
+            'subtitle' => 'nullable|string',
+            'access' => 'nullable|string|max:32',
+            'order' => 'nullable|integer',
+            'type' => 'nullable|string|in:group,window',
+            'parent' => 'nullable|string|max:32',
+            'isParent' => 'boolean',
+            'icon' => 'nullable|string|max:255',
+            'url' => 'nullable|string|max:255',
+        ];
+
+        $extra = array_diff(array_keys($request->all()), array_keys($rules));
+        if (! empty($extra)) {
+            return $this->apiError('Invalid fields: '.implode(', ', $extra), null, 422);
+        }
+
+        $validated = Validator::make($request->all(), $rules)->validate();
+
+        try {
+            $window = new Window;
+            $window->data = $validated;
+            $window->save();
+
+            return $this->apiResponse($window, 'Window created successfully.', true, 201);
+        } catch (\Exception $e) {
+            Log::error('Window creation error: '.$e->getMessage());
+
+            return $this->apiError('Failed to create window.', null, 500);
+        }
+    }
+
+    public function update($id)
+    {
+        try {
+            $window = Window::findOrFail($id);
+            $validated = Validator::make(request()->all(), [
+                'name' => 'required|string|max:255',
+                'subtitle' => 'nullable|string',
+                'access' => 'nullable|string|max:32',
+                'order' => 'nullable|integer',
+                'type' => 'nullable|string|in:group,window',
+                'parent' => 'nullable|string|max:32',
+                'isParent' => 'boolean',
+                'icon' => 'nullable|string|max:255',
+                'url' => 'nullable|string|max:255',
+            ])->validate();
+
+            $window->data = array_merge($window->data, $validated);
+            $window->save();
+
+            return $this->apiResponse($window, 'Window updated successfully.');
+        } catch (\Exception $e) {
+            Log::error('Window update error: '.$e->getMessage());
+
+            return $this->apiError('Failed to update window.', null, 500);
+        }
+    }
+
+    public function parent()
+    {
+        try {
+            $parents = Window::where('data->isParent', true)
+                ->where('deleted', null)
+                ->orderBy('data_order_id', 'asc')
+                ->get();
+
+            return $this->apiResponse(['parents' => $parents], 'Parent windows retrieved successfully.');
+        } catch (\Exception $e) {
+            Log::error('Parent windows retrieval error: '.$e->getMessage());
+
+            return $this->apiError('Failed to retrieve parent windows.', null, 500);
+        }
     }
 }

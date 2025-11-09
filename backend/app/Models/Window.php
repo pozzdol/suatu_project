@@ -2,18 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
 class Window extends Model
 {
+    use Auditable;
     use HasFactory;
 
     protected $table = 'windows';
+
     protected $primaryKey = 'id';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
+
     public $timestamps = false;
 
     protected $fillable = ['id', 'created', 'updated', 'deleted', 'data'];
@@ -22,11 +28,11 @@ class Window extends Model
         'created' => 'array',
         'updated' => 'array',
         'deleted' => 'array',
-        'data'    => 'array',
+        'data' => 'array',
         // kolom generated dari DB akan dibaca sebagai string biasa:
-        'data_access_id'  => 'string',
+        'data_access_id' => 'string',
         'data_isParent_id' => 'string',
-        'data_order_id'   => 'string',
+        'data_order_id' => 'integer',
     ];
 
     protected static function booted(): void

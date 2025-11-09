@@ -135,7 +135,7 @@ function FormButtons({
   };
 
   return (
-    <div className="bg-white border-b border-gray-200">
+    <div className="bg-white rounded-t-lg border-b border-gray-200">
       <div className="flex justify-between items-center px-4 py-3">
         <div
           className={`flex items-center gap-1 ${disabled ? "opacity-50" : ""}`}

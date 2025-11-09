@@ -1,16 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { validatePermit } from "@/utils/validation";
 import { FilePlusIcon } from "@phosphor-icons/react";
-import Table from "@/components/Table";
+import Table, { type HeaderType } from "@/components/Table";
 import FormButtons from "@/components/FormButtons";
 import { parseNumericFilter } from "@/utils/filterOperators";
+import { useNavigate } from "react-router-dom";
+import Loading from "@/components/Loading";
+import Permit from "@/components/Permit";
+import requestApi from "@/utils/api";
 
 type WindowData = Record<string, unknown> & {
   id: string;
-  header2: string;
-  header3: string;
-  header4: string;
+  name: string;
+  url: string;
+  data_isParent: boolean;
+  access: string;
 };
 
 interface TableHeader {
@@ -34,27 +39,16 @@ interface TableHeader {
 }
 
 export default function AdminWindowIndexPage() {
+  const navigate = useNavigate();
+  const [permit, setPermit] = useState(false);
+  const [isEditable, setIsEditable] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
   const [title, setTitle] = useState("");
   const [subTitle, setSubtitle] = useState("");
   const [loading, setLoading] = useState(true);
+  const [indexUrl, setIndexUrl] = useState("");
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
-  const [isEditable] = useState(true);
-
-  // Add missing functions
-  const handleCreate = () => {
-    console.log("Create new item");
-    // Implement create logic
-  };
-
-  const handleRefresh = () => {
-    console.log("Refresh data");
-    // Implement refresh logic
-  };
-
-  const handleMassDelete = (rows: string[]) => {
-    console.log("Delete selected rows:", rows);
-    // Implement mass delete logic
-  };
 
   useEffect(() => {
     const initializePage = async () => {
@@ -67,6 +61,11 @@ export default function AdminWindowIndexPage() {
         if (pageData && pageData.success && pageData.data.permit.permission) {
           setTitle(pageData.data.page.name);
           setSubtitle(pageData.data.page.description);
+          setIndexUrl(pageData.data.page.url);
+
+          setPermit(pageData.data.permit.permission);
+          setIsEditable(pageData.data.permit.isEditable);
+          setIsAdmin(pageData.data.permit.isAdmin);
         } else {
           toast.error("You don't have permission to access this page");
         }
@@ -80,189 +79,127 @@ export default function AdminWindowIndexPage() {
     initializePage();
   }, []);
 
+  // FETCH DATA
+  const [data, setData] = useState<WindowData[]>([]);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await requestApi.get("/general/setup/windows/list");
+      if (response && response.data.success) {
+        setData(response.data.data.windows);
+      } else {
+        toast.error("Failed to fetch window data");
+      }
+    } catch (error) {
+      console.error("Failed to fetch window data:", error);
+      toast.error("Failed to fetch window data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (permit) {
+      fetchData();
+    }
+  }, [permit]);
+  // FETCH DATA END
+
+  // Add missing functions
+  const handleCreate = () => {
+    navigate(`${indexUrl}/create`);
+  };
+
+  const handleRefresh = () => {
+    console.log("Refresh data");
+    // Implement refresh logic
+  };
+
+  const handleDetail = (row: WindowData) => {
+    navigate(`${indexUrl}/${row.id}`);
+  };
+
+  const handleMassDelete = (rows: string[]) => {
+    console.log("Delete selected rows:", rows);
+    // Implement mass delete logic
+  };
+
+  // TABLE HEADERS
+  const getUniqueIsParent = (
+    data: WindowData[]
+  ): { value: string; label: string }[] => {
+    if (!data) return [];
+
+    const uniqueIsParent = Array.from(
+      new Set(data.map((item) => item.data_isParent))
+    )
+      .sort()
+      .map((item) => ({
+        value: String(item),
+        label: item ? "Yes" : "No",
+      }));
+
+    return [...uniqueIsParent];
+  };
+
   const headers: TableHeader[] = useMemo(
     () => [
       {
-        label: "City",
-        field: "header2",
-        sortable: true,
-        filter: true,
-        filterType: "search",
-        type: "text",
+        label: "",
+        field: "id",
+        type: "text" as HeaderType,
+        isNumeric: false,
+        isMultiSelect: false,
+        allowTextInput: false,
+        width: "8px",
+        minWidth: "8px",
+        maxWidth: "8px",
+        exportable: false,
         showOnMobile: true,
-        minWidth: "120px",
       },
       {
-        label: "District",
-        field: "header3",
-        sortable: true,
-        filter: true,
-        filterType: "option",
-        type: "select",
+        label: "Window Name",
+        field: "name",
+        type: "text" as HeaderType,
+        isNumeric: false,
+        isMultiSelect: false,
+        allowTextInput: false,
         showOnMobile: true,
+        exportable: true,
+      },
+      {
+        label: "Url",
+        field: "url",
+        type: "text" as HeaderType,
+        isNumeric: false,
+        isMultiSelect: false,
+        allowTextInput: false,
+        showOnMobile: true,
+        exportable: true,
+      },
+      {
+        label: "Is Parent",
+        field: "data_isParent",
+        type: "dynamicSelect" as HeaderType,
+        options: getUniqueIsParent(data || []),
+        showOnMobile: true,
+        allowTextInput: true,
         isMultiSelect: true,
-        minWidth: "120px",
-        options: [
-          { value: "Ciwidey", label: "Ciwidey" },
-          { value: "Gubeng", label: "Gubeng" },
-          { value: "Jakarta Selatan", label: "Jakarta Selatan" },
-          { value: "Denpasar", label: "Denpasar" },
-          { value: "Medan Timur", label: "Medan Timur" },
-          { value: "Semarang Utara", label: "Semarang Utara" },
-          { value: "Sleman", label: "Sleman" },
-          { value: "Mariso", label: "Mariso" },
-          { value: "Ilir Barat", label: "Ilir Barat" },
-          { value: "Tanjung Karang", label: "Tanjung Karang" },
-          { value: "Marpoyan Damai", label: "Marpoyan Damai" },
-          { value: "Batu Aji", label: "Batu Aji" },
-          { value: "Pontianak Kota", label: "Pontianak Kota" },
-          { value: "Samarinda Ulu", label: "Samarinda Ulu" },
-          { value: "Wenang", label: "Wenang" },
-          { value: "Padang Utara", label: "Padang Utara" },
-          { value: "Banjarmasin Utara", label: "Banjarmasin Utara" },
-          { value: "Klojen", label: "Klojen" },
-          { value: "Pasar Kliwon", label: "Pasar Kliwon" },
-          { value: "Bogor Barat", label: "Bogor Barat" },
-        ],
+        exportable: true,
       },
       {
-        label: "Color",
-        field: "header4",
-        sortable: true,
-        filter: true,
-        filterType: "search",
-        type: "text",
+        label: "Access",
+        field: "access",
+        type: "text" as HeaderType,
+        isNumeric: false,
+        isMultiSelect: false,
+        allowTextInput: false,
         showOnMobile: true,
-        minWidth: "120px",
+        exportable: true,
       },
     ],
-    []
-  );
-
-  const data: WindowData[] = useMemo(
-    () => [
-      {
-        id: "1",
-        header2: "Bandung",
-        header3: "Ciwidey",
-        header4: "Hejo",
-      },
-      {
-        id: "2",
-        header2: "Surabaya",
-        header3: "Gubeng",
-        header4: "Bodas",
-      },
-      {
-        id: "3",
-        header2: "Jakarta",
-        header3: "Jakarta Selatan",
-        header4: "Biru",
-      },
-      {
-        id: "4",
-        header2: "Bali",
-        header3: "Denpasar",
-        header4: "Beureum",
-      },
-      {
-        id: "5",
-        header2: "Medan",
-        header3: "Medan Timur",
-        header4: "Kuning",
-      },
-      {
-        id: "6",
-        header2: "Semarang",
-        header3: "Semarang Utara",
-        header4: "Hijau",
-      },
-      {
-        id: "7",
-        header2: "Yogyakarta",
-        header3: "Sleman",
-        header4: "Merah",
-      },
-      {
-        id: "8",
-        header2: "Makassar",
-        header3: "Mariso",
-        header4: "Ungu",
-      },
-      {
-        id: "9",
-        header2: "Palembang",
-        header3: "Ilir Barat",
-        header4: "Orange",
-      },
-      {
-        id: "10",
-        header2: "Bandar Lampung",
-        header3: "Tanjung Karang",
-        header4: "Pink",
-      },
-      {
-        id: "11",
-        header2: "Pekanbaru",
-        header3: "Marpoyan Damai",
-        header4: "Coklat",
-      },
-      {
-        id: "12",
-        header2: "Batam",
-        header3: "Batu Aji",
-        header4: "Abu-abu",
-      },
-      {
-        id: "13",
-        header2: "Pontianak",
-        header3: "Pontianak Kota",
-        header4: "Emas",
-      },
-      {
-        id: "14",
-        header2: "Samarinda",
-        header3: "Samarinda Ulu",
-        header4: "Perak",
-      },
-      {
-        id: "15",
-        header2: "Manado",
-        header3: "Wenang",
-        header4: "Biru Muda",
-      },
-      {
-        id: "16",
-        header2: "Padang",
-        header3: "Padang Utara",
-        header4: "Hijau Muda",
-      },
-      {
-        id: "17",
-        header2: "Banjarmasin",
-        header3: "Banjarmasin Utara",
-        header4: "Merah Muda",
-      },
-      {
-        id: "18",
-        header2: "Malang",
-        header3: "Klojen",
-        header4: "Ungu Muda",
-      },
-      {
-        id: "19",
-        header2: "Solo",
-        header3: "Pasar Kliwon",
-        header4: "Orange Muda",
-      },
-      {
-        id: "20",
-        header2: "Bogor",
-        header3: "Bogor Barat",
-        header4: "Pink Muda",
-      },
-    ],
-    []
+    [data]
   );
 
   const initialFilters = headers.reduce(
@@ -384,24 +321,20 @@ export default function AdminWindowIndexPage() {
   }, [data, filters, headers]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    );
+    return <Loading />;
+  }
+
+  if (!permit) {
+    return <Permit />;
   }
 
   return (
-    <div className="pt-6 px-8 pb-14 min-h-[calc(100vh-64px)] md:py-6">
+    <div className="pt-6 px-8 pb-14 md:py-6">
       <div className="text-secondary-600 grid grid-cols-1 gap-2 md:flex md:justify-between md:items-center mb-6">
         <div>
           <h1 className="text-3xl font-semibold">{title}</h1>
           <p>{subTitle}</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors w-fit">
-          <FilePlusIcon size={20} />
-          Add New
-        </button>
       </div>
 
       {/* TABLE SECTION */}
@@ -425,32 +358,46 @@ export default function AdminWindowIndexPage() {
         headers={headers}
         data={data}
         isTotalEnabled={false}
-        onDetail={(row) => {
-          console.log(`Detail clicked on row:`, row);
-          return false;
-        }}
+        onDetail={handleDetail}
         filters={filters}
         setFilters={setFilters}
         handleResetFilters={handleResetFilters}
         filteredData={filteredData}
-        itemsPerPage={10}
+        itemsPerPage={5}
         isCheckboxEnabled={true}
         onSelectionChange={setSelectedRows}
         isSortEnabled={true}
         isMultiSortEnabled={false}
-        defaultSorts={[{ field: "header2", order: "asc", priority: 0 }]}
+        defaultSorts={[{ field: "name", order: "asc", priority: 0 }]}
         renderRow={(row) => {
           // Render table cells for each header
           return (
             <>
-              {headers.map((header) => (
-                <td
-                  key={header.field}
-                  className="py-3 px-4 text-xs text-gray-500"
+              <td className="py-2 text-xs text-gray-500 border-b border-gray-300 w-4 max-w-4">
+                <button
+                  className="rounded flex justify-center items-center hover:text-gray-700 cursor-pointer p-1 hover:bg-gray-200"
+                  onClick={() => handleDetail(row)}
+                  disabled={!isEditable}
                 >
-                  {String(row[header.field])}
-                </td>
-              ))}
+                  📄
+                </button>
+              </td>
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.name}
+              </td>
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.url}
+              </td>
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.data_isParent ? (
+                  <div className="text-emerald-600">Yes</div>
+                ) : (
+                  <div className="text-rose-600">No</div>
+                )}
+              </td>
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.access}
+              </td>
             </>
           );
         }}

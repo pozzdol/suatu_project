@@ -424,7 +424,9 @@ const Table = ({
       )}
 
       {/* Responsive wrapper */}
-      <div className="overflow-x-auto">
+      <div
+        className={`overflow-x-auto ${totalPages <= 1 ? "rounded-b-lg" : ""}`}
+      >
         <div
           className="inline-block min-w-full align-middle"
           style={{
@@ -799,7 +801,7 @@ const Table = ({
 
       {/* Pagination UI - Enhanced */}
       {totalPages > 1 && (
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-4 py-3 bg-white border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-4 py-3 bg-white border-t border-gray-200 rounded-b-lg">
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-gray-600">
             <span>
               Showing {startIndex + 1} to{" "}
