@@ -44,6 +44,25 @@ class WindowsController extends Controller
         }
     }
 
+    public function tree()
+    {
+        try {
+            // Get all windows ordered by order field
+            $windows = Window::orderBy('data_order_id', 'asc')
+                ->where('deleted', null)
+                ->get();
+
+            // Build menu structure
+            $menuList = $this->buildMenuTree($windows);
+
+            return $this->apiResponse(['menuList' => $menuList], 'Menu retrieved successfully.');
+        } catch (\Exception $e) {
+            Log::error('Menu retrieval error: ' . $e->getMessage());
+
+            return $this->apiError('Failed to retrieve menu.', null, 500);
+        }
+    }
+
     /**
      * Build hierarchical menu tree from flat data
      */

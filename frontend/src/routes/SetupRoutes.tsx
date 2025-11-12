@@ -7,6 +7,7 @@ import AdminWindowCreatePage from "@/pages/admin/windows/Create";
 import AdminWindowEditPage from "@/pages/admin/windows/Edit";
 import AdminRoleCreatePage from "@/pages/admin/roles/Create";
 import AdminRoleEditPage from "@/pages/admin/roles/Edit";
+import AdminUserIndexPage from "@/pages/admin/users/Index";
 
 function SetupRoutes() {
   return (
@@ -35,6 +36,7 @@ function SetupRoutes() {
           </Layout>
         }
       />
+
       <Route
         path="/role"
         element={
@@ -56,6 +58,15 @@ function SetupRoutes() {
         element={
           <Layout isActive="/general-setup/role">
             <AdminRoleEditPage />
+          </Layout>
+        }
+      />
+
+      <Route
+        path="/user-management"
+        element={
+          <Layout isActive="/general-setup/user-management">
+            <AdminUserIndexPage />
           </Layout>
         }
       />

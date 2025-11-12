@@ -97,7 +97,7 @@ function RoleWindowTree({ permitData, id }: RoleWindowTreeProps) {
   const fetchWindow = async () => {
     setLoading(true);
     try {
-      const response = await requestApi.get("/general/setup/windows");
+      const response = await requestApi.get("/general/setup/windows/tree");
       if (response && response.data.success) {
         const menuList: MenuItem[] = response.data.data.menuList;
         const convertedTree = convertMenuToTree(menuList);
@@ -325,12 +325,12 @@ function RoleWindowTree({ permitData, id }: RoleWindowTreeProps) {
 
     // Filter hanya windows yang isAccess = true
     const selectedWindows = Object.entries(windowPermissions)
-      .filter(([_, permission]) => permission.isAccess)
+      .filter(([, permission]) => permission.isAccess)
       .map(([windowId, permission]) => ({
         window_id: windowId,
         role_id: id,
-        isEdit: permission.isEdit,
-        isAdmin: permission.isAdmin,
+        isEdit: permission.isEdit || false,
+        isAdmin: permission.isAdmin || false,
       }));
 
     if (selectedWindows.length === 0) {
@@ -340,21 +340,19 @@ function RoleWindowTree({ permitData, id }: RoleWindowTreeProps) {
 
     setSubmitting(true);
     try {
-      console.log(JSON.stringify(selectedWindows));
-      // const response = await requestApi.post(
-      //   "/general/setup/role-windows/update",
-      //   {
-      //     role_id: id,
-      //     windows: selectedWindows,
-      //   }
-      // );
+      // console.log(JSON.stringify(selectedWindows));
 
-      // if (response && response.data.success) {
-      //   toast.success("Role windows updated successfully");
-      //   fetchPermission(); // Refresh data
-      // } else {
-      //   toast.error("Failed to update role windows: " + response.data.message);
-      // }
+      const response = await requestApi.post(
+        "/general/setup/role-windows",
+        selectedWindows
+      );
+
+      if (response && response.data.success) {
+        toast.success("Role windows updated successfully");
+        window.location.reload();
+      } else {
+        toast.error("Failed to update role windows: " + response.data.message);
+      }
     } catch (error: any) {
       if (error.response?.status === 403) {
         toast.error("You do not have permission");
@@ -382,7 +380,7 @@ function RoleWindowTree({ permitData, id }: RoleWindowTreeProps) {
         </h2>
         <button
           onClick={handleSubmit}
-          disabled={submitting}
+          disabled={!isEditable || submitting}
           className={`bg-primary-600 hover:bg-primary-700 text-white py-1 px-6 rounded-lg transition duration-200 ease-in-out cursor-pointer ${
             submitting ? "opacity-50 cursor-not-allowed" : ""
           }`}

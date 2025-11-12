@@ -23,7 +23,6 @@ function AdminRoleCreatePage() {
   const [indexUrl, setIndexUrl] = useState("");
   const [permit, setPermit] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const initializePage = async () => {
@@ -39,7 +38,6 @@ function AdminRoleCreatePage() {
           setIndexUrl(pageData.data.page.url);
           setPermit(pageData.data.permit.permission);
           setIsEditable(pageData.data.permit.isEditable);
-          setIsAdmin(pageData.data.permit.isAdmin);
         } else {
           setPermit(false);
           toast.error("You don't have permission to access this page");
@@ -89,6 +87,11 @@ function AdminRoleCreatePage() {
 
   const handleSubmit = async () => {
     if (submitting) return;
+
+    if (!isEditable) {
+      toast.error("You don't have permission to create a role");
+      return;
+    }
 
     if (!formData.name.trim()) {
       toast.error("Role name is required");
@@ -200,7 +203,7 @@ function AdminRoleCreatePage() {
                 submitting ? "opacity-50 cursor-not-allowed" : ""
               }`}
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={!isEditable || submitting}
             >
               {submitting && (
                 <SpinnerGapIcon className="animate-spin w-4 h-4 mr-2 inline" />

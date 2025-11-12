@@ -20,6 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Windows Routes
     Route::get('/general/setup/windows', [WindowsController::class, 'menu']);
+    Route::get('/general/setup/windows/tree', [WindowsController::class, 'tree']);
     Route::get('/general/setup/windows/parents', [WindowsController::class, 'parent']);
     Route::get('/general/setup/windows/list', [WindowsController::class, 'list']);
     Route::post('/general/setup/windows', [WindowsController::class, 'create']);
@@ -38,6 +39,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/general/setup/roles/edit/{id}', [RoleController::class, 'show']);
     Route::put('/general/setup/roles/edit/{id}', [RoleController::class, 'update']);
 
+    Route::post('/general/setup/roles/mass-delete', [RoleController::class, 'massDestroy']);
+    Route::delete('/general/setup/roles/{id}', [RoleController::class, 'destroy']);
+    Route::delete('/general/setup/roles', [RoleController::class, 'destroy']);
+
+    Route::get('/general/setup/roles/usage/{roleId}', [RoleController::class, 'usage']);
+
     // Role Windows Routes
     Route::get('/general/setup/role-windows/role-id/{id}', [RoleWindowController::class, 'index']);
+    Route::post('/general/setup/role-windows', [RoleWindowController::class, 'create']);
 });

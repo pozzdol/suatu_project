@@ -55,8 +55,6 @@ export const validatePermit = async (
       { withCredentials: true }
     );
 
-    console.log(response.data.data);
-
     // Check session validity first using type guard
     if (
       hasSession(response.data.data) &&

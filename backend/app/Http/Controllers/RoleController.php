@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Services\RoleUsageService;
 
 class RoleController extends Controller
 {
@@ -151,5 +152,116 @@ class RoleController extends Controller
 
             return $this->apiError('Failed to update role.', null, 500);
         }
+    }
+
+    /**
+     * Delete single role (soft delete)
+     * ID bisa dari URL parameter atau dari body
+     */
+    public function destroy(Request $request, $id = null)
+    {
+        try {
+            // Prioritaskan ID dari URL, fallback ke body
+            $roleId = $id ?? $request->input('id');
+
+            if (!$roleId) {
+                return $this->apiError('Role ID is required.', null, 422);
+            }
+
+            $role = Role::where('id', $roleId)
+                ->whereNull('deleted')
+                ->first();
+
+            if (!$role) {
+                return $this->apiError('Role not found.', null, 404);
+            }
+
+            // Check permission
+            $userRoleId = Auth::user()->role_id;
+            $permit = $this->getPermit($userRoleId, '17df972f2f8345b1b46d9b29c03c0934');
+
+            if (!$permit) {
+                return $this->apiError('Unauthorized to delete role.', null, 403);
+            }
+
+            // Soft delete
+            $user = Auth::user();
+            $role->deleted = [
+                'deletedAt' => now()->toDateTimeString(),
+                'deletedBy' => $user->id ?? null,
+                'deletedByMail' => $user->email ?? null,
+            ];
+            $role->save();
+
+            return $this->apiResponse(null, 'Role deleted successfully.');
+        } catch (\Exception $e) {
+            Log::error('Role deletion error: ' . $e->getMessage());
+
+            return $this->apiError('Failed to delete role.', null, 500);
+        }
+    }
+
+    /**
+     * Mass delete roles (soft delete)
+     * Expects array of IDs in body: { "ids": ["id1", "id2", ...] }
+     */
+    public function massDestroy(Request $request)
+    {
+        $validated = Validator::make($request->all(), [
+            'ids' => 'required|array',
+            'ids.*' => 'required|string|max:32',
+        ])->validate();
+
+        try {
+            // Check permission
+            $userRoleId = Auth::user()->role_id;
+            $permit = $this->getPermit($userRoleId, '17df972f2f8345b1b46d9b29c03c0934');
+
+            if (!$permit) {
+                return $this->apiError('Unauthorized to delete roles.', null, 403);
+            }
+
+            $deletedCount = 0;
+            $notFoundIds = [];
+            $user = Auth::user();
+
+            foreach ($validated['ids'] as $roleId) {
+                $role = Role::where('id', $roleId)
+                    ->whereNull('deleted')
+                    ->first();
+
+                if ($role) {
+                    $role->deleted = [
+                        'deletedAt' => now()->toDateTimeString(),
+                        'deletedBy' => $user->id ?? null,
+                        'deletedByMail' => $user->email ?? null,
+                    ];
+                    $role->save();
+                    $deletedCount++;
+                } else {
+                    $notFoundIds[] = $roleId;
+                }
+            }
+
+            $message = "{$deletedCount} role(s) deleted successfully.";
+            if (!empty($notFoundIds)) {
+                $message .= " Not found: " . implode(', ', $notFoundIds);
+            }
+
+            return $this->apiResponse([
+                'deleted_count' => $deletedCount,
+                'not_found' => $notFoundIds,
+            ], $message);
+        } catch (\Exception $e) {
+            Log::error('Mass role deletion error: ' . $e->getMessage());
+
+            return $this->apiError('Failed to delete roles.', null, 500);
+        }
+    }
+
+    public function usage($roleId, RoleUsageService $service)
+    {
+        $result = $service->findUsage($roleId);
+        return response()->json($result);
     }
 }

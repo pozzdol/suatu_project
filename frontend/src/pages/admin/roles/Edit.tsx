@@ -231,7 +231,7 @@ function AdminRoleEditPage() {
                 submitting ? "opacity-50 cursor-not-allowed" : ""
               }`}
               onClick={handleSubmit}
-              disabled={submitting}
+              disabled={!isEditable || submitting}
             >
               {submitting && (
                 <SpinnerGapIcon className="animate-spin w-4 h-4 mr-2 inline" />

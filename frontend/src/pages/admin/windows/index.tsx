@@ -402,10 +402,10 @@ export default function AdminWindowIndexPage() {
       {/* TABLE SECTION */}
       <FormButtons
         activeButtons={[
-          "new",
           "refresh",
           "export",
           ...(selectedRows.length > 0 ? ["delete"] : []),
+          ...(isEditable ? ["new"] : []),
         ]}
         onNew={handleCreate}
         onRefresh={handleRefresh}

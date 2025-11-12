@@ -151,9 +151,12 @@ function Layout({ children, isActive }: LayoutProps) {
           >
             <IconRenderer name={menu.icon} size={24} className="shrink-0" />
             <div
-              className={`flex-1 transition-all duration-300 overflow-hidden whitespace-nowrap ${
-                isSidebarOpen ? "opacity-100 max-w-full" : "opacity-0 max-w-0"
+              className={`flex-1 transition-all duration-300 overflow-hidden ${
+                isSidebarOpen
+                  ? "opacity-100 max-w-full truncate"
+                  : "opacity-0 max-w-0"
               }`}
+              title={menu.name}
             >
               {menu.name}
             </div>
@@ -181,9 +184,12 @@ function Layout({ children, isActive }: LayoutProps) {
           >
             <IconRenderer name={menu.icon} size={24} className="shrink-0" />
             <span
-              className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${
-                isSidebarOpen ? "opacity-100 max-w-full" : "opacity-0 max-w-0"
+              className={`transition-all duration-300 overflow-hidden ${
+                isSidebarOpen
+                  ? "opacity-100 max-w-full truncate"
+                  : "opacity-0 max-w-0"
               }`}
+              title={menu.name}
             >
               {menu.name}
             </span>

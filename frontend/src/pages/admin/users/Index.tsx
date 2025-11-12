@@ -39,7 +39,7 @@ interface TableHeader {
   stickyPosition?: number;
 }
 
-export default function AdminRoleIndexPage() {
+export default function AdminUserIndexPage() {
   const navigate = useNavigate();
   const [permit, setPermit] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
@@ -56,7 +56,7 @@ export default function AdminRoleIndexPage() {
       try {
         setLoading(true);
         const pageData = await validatePermit(
-          "17df972f2f8345b1b46d9b29c03c0934"
+          "f246e11b2401428fb586e6fb49a2be96"
         );
 
         if (pageData && pageData.success && pageData.data.permit.permission) {
@@ -89,15 +89,15 @@ export default function AdminRoleIndexPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await requestApi.get("/general/setup/roles/list");
+      const response = await requestApi.get("/general/setup/windows/list");
       if (response && response.data.success) {
-        setData(response.data.data.roles);
+        setData(response.data.data.windows);
       } else {
-        toast.error("Failed to fetch role data");
+        toast.error("Failed to fetch window data");
       }
     } catch (error) {
-      console.error("Failed to fetch role data:", error);
-      toast.error("Failed to fetch role data");
+      console.error("Failed to fetch window data:", error);
+      toast.error("Failed to fetch window data");
     } finally {
       setLoading(false);
     }
@@ -144,7 +144,7 @@ export default function AdminRoleIndexPage() {
 
     try {
       const response = await requestApi.post(
-        "/general/setup/roles/mass-delete",
+        "/general/setup/windows/mass-delete",
         {
           ids: pendingDeleteIds,
         }
@@ -152,20 +152,13 @@ export default function AdminRoleIndexPage() {
       // console.log(response);
 
       if (response.data.success) {
-        console.log(JSON.stringify(response.data.data));
-        if (response.data.data.not_found.length > 0) {
-          toast.error(
-            `${response.data.data.not_found.length} record(s) not found and could not be deleted`
-          );
-        } else {
-          toast.success(
-            `Successfully deleted ${pendingDeleteIds.length} record(s)`
-          );
-          fetchData(); // Refresh data
-          setSelectedRows([]); // Clear selection
-          setPendingDeleteIds([]);
-        }
+        toast.success(
+          `Successfully deleted ${pendingDeleteIds.length} record(s)`
+        );
+        setSelectedRows([]); // Clear selection
+        fetchData(); // Refresh data
         setDeleteModalVisible(false);
+        setPendingDeleteIds([]);
       } else {
         toast.error(response.data.message || "Failed to delete records");
       }
@@ -185,11 +178,28 @@ export default function AdminRoleIndexPage() {
   };
 
   // TABLE HEADERS
+  const getUniqueIsParent = (
+    data: WindowData[]
+  ): { value: string; label: string }[] => {
+    if (!data) return [];
+
+    const uniqueIsParent = Array.from(
+      new Set(data.map((item) => item.data_isParent))
+    )
+      .sort()
+      .map((item) => ({
+        value: String(item),
+        label: item ? "Yes" : "No",
+      }));
+
+    return [...uniqueIsParent];
+  };
+
   const headers: TableHeader[] = useMemo(
     () => [
       {
         label: "",
-        field: "",
+        field: "id",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -201,17 +211,7 @@ export default function AdminRoleIndexPage() {
         showOnMobile: true,
       },
       {
-        label: "Role Id",
-        field: "id",
-        type: "text" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-      },
-      {
-        label: "Role Name",
+        label: "Window Name",
         field: "name",
         type: "text" as HeaderType,
         isNumeric: false,
@@ -221,8 +221,38 @@ export default function AdminRoleIndexPage() {
         exportable: true,
       },
       {
-        label: "Description",
-        field: "description",
+        label: "Url",
+        field: "url",
+        type: "text" as HeaderType,
+        isNumeric: false,
+        isMultiSelect: false,
+        allowTextInput: false,
+        showOnMobile: true,
+        exportable: true,
+      },
+      {
+        label: "Is Parent",
+        field: "data_isParent",
+        type: "dynamicSelect" as HeaderType,
+        options: getUniqueIsParent(data || []),
+        showOnMobile: true,
+        allowTextInput: true,
+        isMultiSelect: true,
+        exportable: true,
+      },
+      {
+        label: "Access",
+        field: "access",
+        type: "text" as HeaderType,
+        isNumeric: false,
+        isMultiSelect: false,
+        allowTextInput: false,
+        showOnMobile: true,
+        exportable: true,
+      },
+      {
+        label: "Icon",
+        field: "icon",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -414,14 +444,24 @@ export default function AdminRoleIndexPage() {
                   📄
                 </button>
               </td>
-              <td className="py-2 text-xs text-gray-500 border-b border-gray-300 px-2">
-                {row.id}
-              </td>
-              <td className="py-2 text-xs text-gray-500 border-b border-gray-300 px-2 ">
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
                 {row.name}
               </td>
-              <td className="py-2 text-xs text-gray-500 border-b border-gray-300 px-2 ">
-                {row.description}
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.url}
+              </td>
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.data_isParent ? (
+                  <div className="text-emerald-600">Yes</div>
+                ) : (
+                  <div className="text-rose-600">No</div>
+                )}
+              </td>
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.access}
+              </td>
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.icon}
               </td>
             </>
           );
@@ -487,7 +527,7 @@ export default function AdminRoleIndexPage() {
           </p>
           <div className="bg-red-50 border border-red-200 rounded-xl p-4">
             <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
+              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="text-red-600 text-sm font-bold">!</span>
               </div>
               <div>
