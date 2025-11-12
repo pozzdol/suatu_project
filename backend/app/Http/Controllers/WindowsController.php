@@ -6,7 +6,6 @@ use App\Models\Role;
 use App\Models\RoleWindow;
 use App\Models\Window;
 use App\Traits\ApiResponse;
-use App\Traits\Auditable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -15,7 +14,6 @@ use Illuminate\Support\Facades\Validator;
 class WindowsController extends Controller
 {
     use ApiResponse;
-    use Auditable;
 
     public function menu()
     {
@@ -40,7 +38,7 @@ class WindowsController extends Controller
 
             return $this->apiResponse(['menuList' => $menuList], 'Menu retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Menu retrieval error: '.$e->getMessage());
+            Log::error('Menu retrieval error: ' . $e->getMessage());
 
             return $this->apiError('Failed to retrieve menu.', null, 500);
         }
@@ -128,7 +126,7 @@ class WindowsController extends Controller
 
             return $this->apiResponse(['windows' => $payload], 'Windows retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Windows retrieval error: '.$e->getMessage());
+            Log::error('Windows retrieval error: ' . $e->getMessage());
 
             return $this->apiError('Failed to retrieve windows.', null, 500);
         }
@@ -162,7 +160,7 @@ class WindowsController extends Controller
 
             return $this->apiResponse(['window' => $payload], 'Window retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Window retrieval error: '.$e->getMessage());
+            Log::error('Window retrieval error: ' . $e->getMessage());
 
             return $this->apiError('Failed to retrieve window.', null, 500);
         }
@@ -184,7 +182,7 @@ class WindowsController extends Controller
 
         $extra = array_diff(array_keys($request->all()), array_keys($rules));
         if (! empty($extra)) {
-            return $this->apiError('Invalid fields: '.implode(', ', $extra), null, 422);
+            return $this->apiError('Invalid fields: ' . implode(', ', $extra), null, 422);
         }
 
         $validated = Validator::make($request->all(), $rules)->validate();
@@ -196,7 +194,7 @@ class WindowsController extends Controller
 
             return $this->apiResponse($window, 'Window created successfully.', true, 201);
         } catch (\Exception $e) {
-            Log::error('Window creation error: '.$e->getMessage());
+            Log::error('Window creation error: ' . $e->getMessage());
 
             return $this->apiError('Failed to create window.', null, 500);
         }
@@ -223,9 +221,99 @@ class WindowsController extends Controller
 
             return $this->apiResponse($window, 'Window updated successfully.');
         } catch (\Exception $e) {
-            Log::error('Window update error: '.$e->getMessage());
+            Log::error('Window update error: ' . $e->getMessage());
 
             return $this->apiError('Failed to update window.', null, 500);
+        }
+    }
+
+    /**
+     * Delete single window (soft delete via Auditable trait)
+     * ID bisa dari URL parameter atau dari body
+     */
+    public function destroy(Request $request, $id = null)
+    {
+        try {
+            // Prioritaskan ID dari URL, fallback ke body
+            $windowId = $id ?? $request->input('id');
+
+            if (!$windowId) {
+                return $this->apiError('Window ID is required.', null, 422);
+            }
+
+            $window = Window::where('id', $windowId)
+                ->where('deleted', null)
+                ->first();
+
+            if (!$window) {
+                return $this->apiError('Window not found.', null, 404);
+            }
+
+            // Soft delete menggunakan Auditable trait
+            $user = Auth::user();
+            $window->deleted = [
+                'deletedAt' => now()->toDateTimeString(),
+                'deletedBy' => $user->id ?? null,
+                'deletedByMail' => $user->email ?? null,
+            ];
+            $window->save();
+
+            return $this->apiResponse(null, 'Window deleted successfully.');
+        } catch (\Exception $e) {
+            Log::error('Window deletion error: ' . $e->getMessage());
+
+            return $this->apiError('Failed to delete window.', null, 500);
+        }
+    }
+
+    /**
+     * Mass delete windows (soft delete via Auditable trait)
+     * Expects array of IDs in body: { "ids": ["id1", "id2", ...] }
+     */
+    public function massDestroy(Request $request)
+    {
+        // dd($request->all());
+        $validated = Validator::make($request->all(), [
+            'ids' => 'required|array',
+            'ids.*' => 'required|string|max:32',
+        ])->validate();
+
+        try {
+            $deletedCount = 0;
+            $notFoundIds = [];
+
+            foreach ($validated['ids'] as $windowId) {
+                $window = Window::where('id', $windowId)
+                    ->where('deleted', null)
+                    ->first();
+                $user = Auth::user();
+
+                if ($window) {
+                    $window->deleted = [
+                        'deletedAt' => now()->toDateTimeString(),
+                        'deletedBy' => $user->id ?? null,
+                        'deletedByMail' => $user->email ?? null,
+                    ];
+                    $window->save();
+                    $deletedCount++;
+                } else {
+                    $notFoundIds[] = $windowId;
+                }
+            }
+
+            $message = "{$deletedCount} window(s) deleted successfully.";
+            if (!empty($notFoundIds)) {
+                $message .= " Not found: " . implode(', ', $notFoundIds);
+            }
+
+            return $this->apiResponse([
+                'deleted_count' => $deletedCount,
+                'not_found' => $notFoundIds,
+            ], $message);
+        } catch (\Exception $e) {
+            Log::error('Mass deletion error: ' . $e->getMessage());
+
+            return $this->apiError('Failed to delete windows.', null, 500);
         }
     }
 
@@ -239,7 +327,7 @@ class WindowsController extends Controller
 
             return $this->apiResponse(['parents' => $parents], 'Parent windows retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Parent windows retrieval error: '.$e->getMessage());
+            Log::error('Parent windows retrieval error: ' . $e->getMessage());
 
             return $this->apiError('Failed to retrieve parent windows.', null, 500);
         }

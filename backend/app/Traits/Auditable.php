@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
 trait Auditable
@@ -28,5 +29,18 @@ trait Auditable
                 'deletedBy' => Auth::id(),
             ]);
         });
+    }
+
+    protected function deletedRow(int $status = 200): JsonResponse
+    {
+        return response()->json([
+            'deletedAt' => now()->toISOString(),
+            'deletedBy' => Auth::id(),
+        ], $status);
+    }
+
+    protected function apiError(string $message = 'Something went wrong.', $data = null, int $status = 400): JsonResponse
+    {
+        return $this->apiResponse($data, $message, false, $status);
     }
 }

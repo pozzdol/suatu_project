@@ -55,6 +55,8 @@ export const validatePermit = async (
       { withCredentials: true }
     );
 
+    console.log(response.data.data);
+
     // Check session validity first using type guard
     if (
       hasSession(response.data.data) &&
@@ -66,7 +68,7 @@ export const validatePermit = async (
 
     return response.data;
   } catch (error: any) {
-    // console.error("Permit validation failed:", error);
+    console.error("Permit validation failed:", error);
 
     // Handle authentication errors
     if (error.response?.status === 401 || error.response?.status === 403) {

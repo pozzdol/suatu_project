@@ -39,7 +39,7 @@ interface TableHeader {
   stickyPosition?: number;
 }
 
-export default function AdminWindowIndexPage() {
+export default function AdminRoleIndexPage() {
   const navigate = useNavigate();
   const [permit, setPermit] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
@@ -56,7 +56,7 @@ export default function AdminWindowIndexPage() {
       try {
         setLoading(true);
         const pageData = await validatePermit(
-          "evosd4d2d55a4faab5a082386def0bee"
+          "17df972f2f8345b1b46d9b29c03c0934"
         );
 
         if (pageData && pageData.success && pageData.data.permit.permission) {
@@ -89,15 +89,15 @@ export default function AdminWindowIndexPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await requestApi.get("/general/setup/windows/list");
+      const response = await requestApi.get("/general/setup/roles/list");
       if (response && response.data.success) {
-        setData(response.data.data.windows);
+        setData(response.data.data.roles);
       } else {
-        toast.error("Failed to fetch window data");
+        toast.error("Failed to fetch role data");
       }
     } catch (error) {
-      console.error("Failed to fetch window data:", error);
-      toast.error("Failed to fetch window data");
+      console.error("Failed to fetch role data:", error);
+      toast.error("Failed to fetch role data");
     } finally {
       setLoading(false);
     }
@@ -178,28 +178,11 @@ export default function AdminWindowIndexPage() {
   };
 
   // TABLE HEADERS
-  const getUniqueIsParent = (
-    data: WindowData[]
-  ): { value: string; label: string }[] => {
-    if (!data) return [];
-
-    const uniqueIsParent = Array.from(
-      new Set(data.map((item) => item.data_isParent))
-    )
-      .sort()
-      .map((item) => ({
-        value: String(item),
-        label: item ? "Yes" : "No",
-      }));
-
-    return [...uniqueIsParent];
-  };
-
   const headers: TableHeader[] = useMemo(
     () => [
       {
         label: "",
-        field: "id",
+        field: "",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -211,7 +194,17 @@ export default function AdminWindowIndexPage() {
         showOnMobile: true,
       },
       {
-        label: "Window Name",
+        label: "Role Id",
+        field: "id",
+        type: "text" as HeaderType,
+        isNumeric: false,
+        isMultiSelect: false,
+        allowTextInput: false,
+        showOnMobile: true,
+        exportable: true,
+      },
+      {
+        label: "Role Name",
         field: "name",
         type: "text" as HeaderType,
         isNumeric: false,
@@ -221,38 +214,8 @@ export default function AdminWindowIndexPage() {
         exportable: true,
       },
       {
-        label: "Url",
-        field: "url",
-        type: "text" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-      },
-      {
-        label: "Is Parent",
-        field: "data_isParent",
-        type: "dynamicSelect" as HeaderType,
-        options: getUniqueIsParent(data || []),
-        showOnMobile: true,
-        allowTextInput: true,
-        isMultiSelect: true,
-        exportable: true,
-      },
-      {
-        label: "Access",
-        field: "access",
-        type: "text" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-      },
-      {
-        label: "Icon",
-        field: "icon",
+        label: "Description",
+        field: "description",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -444,24 +407,14 @@ export default function AdminWindowIndexPage() {
                   📄
                 </button>
               </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+              <td className="py-2 text-xs text-gray-500 border-b border-gray-300 px-2">
+                {row.id}
+              </td>
+              <td className="py-2 text-xs text-gray-500 border-b border-gray-300 px-2 ">
                 {row.name}
               </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.url}
-              </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.data_isParent ? (
-                  <div className="text-emerald-600">Yes</div>
-                ) : (
-                  <div className="text-rose-600">No</div>
-                )}
-              </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.access}
-              </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.icon}
+              <td className="py-2 text-xs text-gray-500 border-b border-gray-300 px-2 ">
+                {row.description}
               </td>
             </>
           );
@@ -527,7 +480,7 @@ export default function AdminWindowIndexPage() {
           </p>
           <div className="bg-red-50 border border-red-200 rounded-xl p-4">
             <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
                 <span className="text-red-600 text-sm font-bold">!</span>
               </div>
               <div>

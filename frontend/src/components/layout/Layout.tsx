@@ -2,10 +2,7 @@ import logoApp from "@/assets/logoApp.png";
 import requestApi from "@/utils/api";
 import { logout } from "@/utils/auth";
 import {
-  AppWindowIcon,
   CaretUpIcon,
-  GearIcon,
-  HouseIcon,
   SidebarIcon,
   SignOutIcon,
   SpinnerBallIcon,
@@ -14,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
+import IconRenderer from "../IconRenderer";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -114,15 +112,6 @@ function Layout({ children, isActive }: LayoutProps) {
     });
   };
 
-  const getIcon = (iconName: string) => {
-    const iconMap = {
-      HouseIcon: HouseIcon,
-      GearIcon: GearIcon,
-      AppWindowIcon: AppWindowIcon,
-    };
-    return iconMap[iconName as keyof typeof iconMap] || HouseIcon; // Default ke HouseIcon jika kosong
-  };
-
   const handleLogout = async () => {
     setIsLoadingLogout(true);
     try {
@@ -144,7 +133,6 @@ function Layout({ children, isActive }: LayoutProps) {
   );
 
   const renderMenuItem = (menu: MenuItem, isSub: boolean = false) => {
-    const Icon = getIcon(menu.icon);
     const isGroupExpanded = expandedGroups.has(menu.id);
     const isGroup = menu.type === "group";
 
@@ -161,11 +149,7 @@ function Layout({ children, isActive }: LayoutProps) {
                 : "text-secondary-700"
             } hover:text-gray-600 hover:bg-background rounded-lg px-3 py-2 transition-colors duration-200 cursor-pointer overflow-hidden`}
           >
-            <Icon
-              size={24}
-              weight="duotone"
-              className="text-primary-500 shrink-0"
-            />
+            <IconRenderer name={menu.icon} size={24} className="shrink-0" />
             <div
               className={`flex-1 transition-all duration-300 overflow-hidden whitespace-nowrap ${
                 isSidebarOpen ? "opacity-100 max-w-full" : "opacity-0 max-w-0"
@@ -183,8 +167,8 @@ function Layout({ children, isActive }: LayoutProps) {
             />
           </button>
         ) : (
-          <a
-            href={menu.url}
+          <Link
+            to={menu.url}
             className={`flex items-center ${
               isSidebarOpen ? "gap-2" : "justify-center"
             } font-medium ${
@@ -195,11 +179,7 @@ function Layout({ children, isActive }: LayoutProps) {
               isSub ? "ml-4" : ""
             }`}
           >
-            <Icon
-              size={24}
-              weight="duotone"
-              className="text-primary-500 shrink-0"
-            />
+            <IconRenderer name={menu.icon} size={24} className="shrink-0" />
             <span
               className={`transition-all duration-300 overflow-hidden whitespace-nowrap ${
                 isSidebarOpen ? "opacity-100 max-w-full" : "opacity-0 max-w-0"
@@ -207,7 +187,7 @@ function Layout({ children, isActive }: LayoutProps) {
             >
               {menu.name}
             </span>
-          </a>
+          </Link>
         )}
         {isGroup && menu.subMenu && (
           <ul

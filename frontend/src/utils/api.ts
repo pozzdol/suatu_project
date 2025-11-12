@@ -38,11 +38,40 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Handle common errors here
+    console.error("API Error Details:", {
+      code: error.code,
+      message: error.message,
+      hasResponse: !!error.response,
+      status: error.response?.status,
+    });
+
+    // Handle authentication errors
     if (error.response?.status === 401) {
-      // Redirect to login or refresh token
       window.location.href = "/auth/login";
+      return Promise.reject(error);
     }
+
+    // Handle 500+ server errors (backend down or critical error)
+    if (error.response?.status && error.response.status >= 500) {
+      console.error("Backend server error - possible backend down");
+      window.location.href = "/auth/login";
+      return Promise.reject(error);
+    }
+
+    // Backend unreachable: tidak ada response (network error, timeout, CORS, etc)
+    if (!error.response) {
+      console.error("Backend is unreachable - no response received");
+      window.location.href = "/auth/login";
+      return Promise.reject(error);
+    }
+
+    // Timeout errors
+    if (error.code === "ECONNABORTED") {
+      console.error("Request timeout - backend may be down");
+      window.location.href = "/auth/login";
+      return Promise.reject(error);
+    }
+
     return Promise.reject(error);
   }
 );

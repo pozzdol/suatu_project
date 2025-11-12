@@ -53,15 +53,16 @@ export const isAuthenticated = (): boolean => {
   return true;
 };
 
-export const isAuthenticatedWithValidation = async (): Promise<boolean> => {
-  // First check local token
+export const isAuthenticatedWithValidation = async (
+  bypassCache: boolean = false
+): Promise<boolean> => {
   if (!isAuthenticated()) {
     return false;
   }
 
-  // Check cache first to avoid excessive API calls
   const now = Date.now();
   if (
+    !bypassCache &&
     sessionValidationCache &&
     now - sessionValidationCache.timestamp < SESSION_CACHE_DURATION
   ) {
@@ -69,13 +70,11 @@ export const isAuthenticatedWithValidation = async (): Promise<boolean> => {
   }
 
   try {
-    // Import here to avoid circular dependency
     const { SessionValidation } = await import("./validation");
     const isSessionValid = await SessionValidation(
       "ehjljel9e18r71d452zc897kipgtl561"
     );
 
-    // Update cache
     sessionValidationCache = {
       isValid: isSessionValid,
       timestamp: now,
@@ -89,7 +88,6 @@ export const isAuthenticatedWithValidation = async (): Promise<boolean> => {
     return true;
   } catch (error) {
     console.error("Session validation failed:", error);
-    // Clear cache on error
     sessionValidationCache = null;
     forceLogout();
     return false;

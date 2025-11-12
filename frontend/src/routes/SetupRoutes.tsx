@@ -1,9 +1,12 @@
 import Layout from "@/components/layout/Layout";
 import NotFound from "@/components/NotFound";
-import AdminWindowIndexPage from "@/pages/admin/windows/Index";
-import AdminWindowCreatePage from "@/pages/admin/windows/Create";
 import { Route, Routes } from "react-router-dom";
+import AdminRoleIndexPage from "@/pages/admin/roles";
+import AdminWindowIndexPage from "@/pages/admin/windows";
+import AdminWindowCreatePage from "@/pages/admin/windows/Create";
 import AdminWindowEditPage from "@/pages/admin/windows/Edit";
+import AdminRoleCreatePage from "@/pages/admin/roles/Create";
+import AdminRoleEditPage from "@/pages/admin/roles/Edit";
 
 function SetupRoutes() {
   return (
@@ -29,6 +32,30 @@ function SetupRoutes() {
         element={
           <Layout isActive="/general-setup/window">
             <AdminWindowEditPage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/role"
+        element={
+          <Layout isActive="/general-setup/role">
+            <AdminRoleIndexPage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/role/create"
+        element={
+          <Layout isActive="/general-setup/role">
+            <AdminRoleCreatePage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/role/:id"
+        element={
+          <Layout isActive="/general-setup/role">
+            <AdminRoleEditPage />
           </Layout>
         }
       />

@@ -86,6 +86,8 @@ function AdminWindowEditPage() {
 
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
+  const [originalFormData, setOriginalFormData] =
+    useState<FormData>(initialFormData);
   // STATE MANAGEMENT END
 
   // FETCH DATA
@@ -111,7 +113,7 @@ function AdminWindowEditPage() {
       );
       if (response && response.data.success) {
         const windowData = response.data.data.window;
-        setFormData({
+        const fetchedData: FormData = {
           name: windowData.name,
           subtitle: windowData.subtitle,
           access: windowData.access,
@@ -121,7 +123,9 @@ function AdminWindowEditPage() {
           isParent: windowData.data_isParent,
           icon: windowData.icon,
           url: windowData.url,
-        });
+        };
+        setFormData(fetchedData);
+        setOriginalFormData(fetchedData);
       } else {
         toast.error("Failed to fetch data");
       }
@@ -155,7 +159,8 @@ function AdminWindowEditPage() {
   };
 
   const handleReset = () => {
-    setFormData(initialFormData);
+    setFormData(originalFormData);
+    toast.success("Form has been reset to original data");
   };
 
   const handleSubmit = async () => {
@@ -171,8 +176,8 @@ function AdminWindowEditPage() {
       return;
     }
 
-    if (!formData.order) {
-      toast.error("Window order is required");
+    if (formData.order < 0) {
+      toast.error("Window order must be greater than 0");
       return;
     }
 
@@ -181,8 +186,8 @@ function AdminWindowEditPage() {
       return;
     }
 
-    if (!formData.url.trim()) {
-      toast.error("Window URL is required");
+    if (formData.type === "window" && !formData.url.trim()) {
+      toast.error("Window URL is required for type 'window'");
       return;
     }
 
@@ -431,7 +436,7 @@ function AdminWindowEditPage() {
               {submitting && (
                 <CircleNotchIcon className="animate-spin w-4 h-4 mr-2 inline" />
               )}
-              {submitting ? "Creating..." : "Create"}
+              {submitting ? "Updating..." : "Update"}
             </button>
           </div>
         </div>

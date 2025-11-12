@@ -139,8 +139,8 @@ function AdminWindowCreatePage() {
       return;
     }
 
-    if (!formData.order) {
-      toast.error("Window order is required");
+    if (formData.order < 0) {
+      toast.error("Window order must be greater than 0");
       return;
     }
 
