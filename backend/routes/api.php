@@ -56,4 +56,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/general/setup/users/edit/{id}', [UserController::class, 'show']);
     Route::put('/general/setup/users/edit/{id}', [UserController::class, 'update']);
+
+    Route::post('/general/setup/users/mass-delete', [UserController::class, 'massDestroy']);
+    Route::delete('/general/setup/users/{id}', [UserController::class, 'destroy']);
+    Route::delete('/general/setup/users', [UserController::class, 'destroy']);
 });
