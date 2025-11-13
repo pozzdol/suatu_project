@@ -1,13 +1,15 @@
 import Layout from "@/components/layout/Layout";
 import NotFound from "@/components/NotFound";
 import { Route, Routes } from "react-router-dom";
-import AdminRoleIndexPage from "@/pages/admin/roles";
-import AdminWindowIndexPage from "@/pages/admin/windows";
 import AdminWindowCreatePage from "@/pages/admin/windows/Create";
 import AdminWindowEditPage from "@/pages/admin/windows/Edit";
 import AdminRoleCreatePage from "@/pages/admin/roles/Create";
 import AdminRoleEditPage from "@/pages/admin/roles/Edit";
 import AdminUserIndexPage from "@/pages/admin/users/Index";
+import AdminUserCreatePage from "@/pages/admin/users/Create";
+import AdminRoleIndexPage from "@/pages/admin/roles/Index";
+import AdminWindowIndexPage from "@/pages/admin/windows/Index";
+import AdminUserEditPage from "@/pages/admin/users/Edit";
 
 function SetupRoutes() {
   return (
@@ -67,6 +69,22 @@ function SetupRoutes() {
         element={
           <Layout isActive="/general-setup/user-management">
             <AdminUserIndexPage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/user-management/create"
+        element={
+          <Layout isActive="/general-setup/user-management">
+            <AdminUserCreatePage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/user-management/:id"
+        element={
+          <Layout isActive="/general-setup/user-management">
+            <AdminUserEditPage />
           </Layout>
         }
       />

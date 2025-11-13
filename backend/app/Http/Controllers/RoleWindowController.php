@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\RoleWindow;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class RoleWindowController extends Controller
 {

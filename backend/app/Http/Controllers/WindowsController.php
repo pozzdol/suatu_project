@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Routing\Controller;
 use App\Models\Role;
 use App\Models\RoleWindow;
 use App\Models\Window;
@@ -268,14 +269,7 @@ class WindowsController extends Controller
                 return $this->apiError('Window not found.', null, 404);
             }
 
-            // Soft delete menggunakan Auditable trait
-            $user = Auth::user();
-            $window->deleted = [
-                'deletedAt' => now()->toDateTimeString(),
-                'deletedBy' => $user->id ?? null,
-                'deletedByMail' => $user->email ?? null,
-            ];
-            $window->save();
+            $window->delete();
 
             return $this->apiResponse(null, 'Window deleted successfully.');
         } catch (\Exception $e) {
@@ -305,15 +299,9 @@ class WindowsController extends Controller
                 $window = Window::where('id', $windowId)
                     ->where('deleted', null)
                     ->first();
-                $user = Auth::user();
 
                 if ($window) {
-                    $window->deleted = [
-                        'deletedAt' => now()->toDateTimeString(),
-                        'deletedBy' => $user->id ?? null,
-                        'deletedByMail' => $user->email ?? null,
-                    ];
-                    $window->save();
+                    $window->delete();
                     $deletedCount++;
                 } else {
                     $notFoundIds[] = $windowId;

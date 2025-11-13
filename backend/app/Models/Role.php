@@ -4,11 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class Role extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $table = 'roles';
     protected $primaryKey = 'id';
@@ -22,7 +25,9 @@ class Role extends Model
         'created' => 'array',
         'updated' => 'array',
         'deleted' => 'array',
-        'data'    => 'array',
+        'data' => 'array',
+        'deleted' => 'array',
+        'deleted_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -50,5 +55,46 @@ class Role extends Model
     {
         return $this->belongsToMany(Window::class, 'role_windows', 'role_id', 'window_id')
             ->withPivot(['id', 'isEdit', 'isAdmin']);
+    }
+
+    protected function runSoftDelete()
+    {
+        $query = $this->newQueryWithoutScopes()->where($this->getKeyName(), $this->getKey());
+
+        $time = $this->freshTimestampString();
+
+        $existingMeta = $this->deleted ?? [];
+
+        $meta = array_merge($existingMeta, [
+            'at'     => $time,
+            'by'     => Auth::id() ?: null,
+            'ip'     => request()->ip() ?: null,
+            'reason' => $this->delete_reason ?? request('reason') ?? null,
+        ]);
+
+        $query->update([
+            $this->getDeletedAtColumn() => $time,
+            'deleted' => json_encode($meta),
+        ]);
+
+        // update model in memory
+        $this->{$this->getDeletedAtColumn()} = $time;
+        $this->setAttribute('deleted', $meta);
+    }
+
+    public function restore()
+    {
+        if ($this->fireModelEvent('restoring') === false) {
+            return false;
+        }
+
+        $this->{$this->getDeletedAtColumn()} = null;
+        $this->deleted = null;
+
+        $result = $this->save();
+
+        $this->fireModelEvent('restored', false);
+
+        return $result;
     }
 }

@@ -10,6 +10,7 @@ import Permit from "@/components/Permit";
 import requestApi from "@/utils/api";
 import { Modal } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import useDocumentTitle from "@/hooks/useDocumentTitle";
 
 type WindowData = Record<string, unknown> & {
   id: string;
@@ -80,6 +81,7 @@ export default function AdminWindowIndexPage() {
     initializePage();
   }, []);
 
+  useDocumentTitle(title || "Windows Management");
   // FETCH DATA
   const [data, setData] = useState<WindowData[]>([]);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);

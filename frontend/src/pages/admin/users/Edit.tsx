@@ -1,4 +1,4 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
@@ -9,26 +9,23 @@ import Permit from "@/components/Permit";
 import {
   ArrowCircleLeftIcon,
   CircleNotchIcon,
+  GearSixIcon,
   ShuffleIcon,
 } from "@phosphor-icons/react";
 import { Checkbox, Input, InputNumber, Select } from "antd";
+import useDocumentTitle from "@/hooks/useDocumentTitle";
 
 interface FormData {
   name: string;
-  subtitle?: string;
-  access: string;
-  order: number;
-  type: string;
-  parent?: string;
-  isParent: boolean;
-  icon: string;
-  url: string;
+  email: string;
+  employee_id: string;
+  password: string;
 }
 
-function AdminWindowEditPage() {
+function AdminUserEditPage() {
   // PAGE LOAD
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { id } = useParams();
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [subTitle, setSubtitle] = useState("");
@@ -42,7 +39,7 @@ function AdminWindowEditPage() {
       try {
         setLoading(true);
         const pageData = await validatePermit(
-          "evosd4d2d55a4faab5a082386def0bee"
+          "f246e11b2401428fb586e6fb49a2be96"
         );
 
         if (pageData && pageData.success && pageData.data.permit.permission) {
@@ -67,71 +64,46 @@ function AdminWindowEditPage() {
     initializePage();
   }, []);
 
+  useDocumentTitle(title || "Admin User Update");
   // -- PAGE LOAD END --
 
   // STATE MANAGEMENT
-  const [parentOptions, setParentOptions] = useState<any[]>([]);
+  const [showPasswordSettings, setShowPasswordSettings] = useState(false);
+  const [passwordSettings, setPasswordSettings] = useState({
+    length: 12,
+    uppercase: true,
+    lowercase: true,
+    numbers: true,
+    symbols: true,
+  });
 
+  const [originalData, setOriginalData] = useState<FormData | null>(null);
   const initialFormData: FormData = {
     name: "",
-    subtitle: "",
-    access: "",
-    order: 0,
-    type: "",
-    parent: "",
-    isParent: false,
-    icon: "",
-    url: "",
+    email: "",
+    employee_id: "",
+    password: "",
   };
 
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
-  const [originalFormData, setOriginalFormData] =
-    useState<FormData>(initialFormData);
   // STATE MANAGEMENT END
 
   // FETCH DATA
-  const fetchDataParent = async () => {
-    try {
-      const response = await requestApi.get("/general/setup/windows/parents");
-      if (response && response.data.success) {
-        setParentOptions(response.data.data.parents);
-      } else {
-        toast.error("Failed to fetch parent options");
-      }
-    } catch (error) {
-      console.error("Failed to fetch parent options:", error);
-      toast.error("Failed to fetch parent options");
-    }
-  };
-
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await requestApi.get(
-        "/general/setup/windows/edit/" + id
-      );
-      if (response && response.data.success) {
-        const windowData = response.data.data.window;
-        const fetchedData: FormData = {
-          name: windowData.name,
-          subtitle: windowData.subtitle,
-          access: windowData.access,
-          order: windowData.order,
-          type: windowData.type,
-          parent: windowData.data_parent_id,
-          isParent: windowData.data_isParent,
-          icon: windowData.icon,
-          url: windowData.url,
-        };
-        setFormData(fetchedData);
-        setOriginalFormData(fetchedData);
+      const response = await requestApi.get(`/general/setup/users/edit/${id}`);
+
+      if (response.data.success) {
+        setFormData(response.data.data.user);
+        setOriginalData(response.data.data.user);
       } else {
-        toast.error("Failed to fetch data");
+        toast.error("Failed to fetch user data");
       }
     } catch (error) {
-      console.error("Failed to fetch data:", error);
-      toast.error("Failed to fetch data");
+      toast.error("Failed to fetch user data");
+      console.error("Failed to fetch user data:", error);
     } finally {
       setLoading(false);
     }
@@ -141,58 +113,57 @@ function AdminWindowEditPage() {
   // EFFECTS
   useEffect(() => {
     if (permit) {
-      fetchDataParent();
       fetchData();
     }
   }, [permit]);
   // EFFECTS END
 
   //  HELPERS
-  const generateUUID = () => {
-    return crypto.randomUUID().replace(/-/g, "");
+  const generatePassword = () => {
+    const { length, uppercase, lowercase, numbers, symbols } = passwordSettings;
+
+    let charset = "";
+    if (uppercase) charset += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (lowercase) charset += "abcdefghijklmnopqrstuvwxyz";
+    if (numbers) charset += "0123456789";
+    if (symbols) charset += "!@#$%^&*()_+-=[]{}|;:,.<>?";
+
+    if (charset === "") {
+      toast.error("Please select at least one character type");
+      return;
+    }
+
+    let password = "";
+    for (let i = 0; i < length; i++) {
+      password += charset.charAt(Math.floor(Math.random() * charset.length));
+    }
+
+    setFormData({ ...formData, password });
+    toast.success("Password generated!");
   };
   // HELPERS END
 
   // FUNCTIONS
-  const handleRegenerateUUID = () => {
-    setFormData({ ...formData, access: generateUUID() });
-  };
 
   const handleReset = () => {
-    setFormData(originalFormData);
-    toast.success("Form has been reset to original data");
+    setFormData(initialFormData);
   };
 
   const handleSubmit = async () => {
     if (submitting) return;
 
     if (!formData.name.trim()) {
-      toast.error("Window name is required");
+      toast.error("Name is required");
       return;
     }
 
-    if (!formData.access.trim()) {
-      toast.error("Window access is required");
+    if (!formData.email.trim()) {
+      toast.error("Email is required");
       return;
     }
 
-    if (formData.order < 0) {
-      toast.error("Window order must be greater than 0");
-      return;
-    }
-
-    if (!formData.type.trim()) {
-      toast.error("Window type is required");
-      return;
-    }
-
-    if (formData.type === "window" && !formData.url.trim()) {
-      toast.error("Window URL is required for type 'window'");
-      return;
-    }
-
-    if (!formData.icon.trim()) {
-      toast.error("Window icon is required");
+    if (!formData.employee_id.trim()) {
+      toast.error("Employee ID is required");
       return;
     }
 
@@ -200,17 +171,18 @@ function AdminWindowEditPage() {
     try {
       // console.log("Form Data to submit:", JSON.stringify(formData));
       const response = await requestApi.put(
-        "/general/setup/windows/edit/" + id,
+        "/general/setup/users/edit/" + id,
         formData
       );
       if (response && response.data.success) {
-        toast.success("Window updated successfully");
+        toast.success("User updated successfully");
         navigate(`${indexUrl}`);
       } else {
-        toast.error("Failed to update window");
+        toast.error("Failed to update user");
       }
     } catch (error) {
-      toast.error("Failed to update window");
+      toast.error("Failed to update user");
+      console.error("Failed to update user:", error);
     } finally {
       setSubmitting(false);
     }
@@ -252,163 +224,189 @@ function AdminWindowEditPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Window Name
+              Name
             </label>
             <Input
               type="text"
               className="mt-1 block w-full border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
               size="large"
-              placeholder="Enter window name"
+              allowClear
+              placeholder="Enter User Name"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
             />
           </div>
-
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Window Subtitle
-            </label>
-            <Input.TextArea
-              rows={2}
-              className="mt-1 block w-full border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
-              size="large"
-              placeholder="Enter window subtitle"
-              value={formData.subtitle}
-              onChange={(e) =>
-                setFormData({ ...formData, subtitle: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Access
-            </label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="text"
-                className="mt-1 block w-full border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
-                size="large"
-                placeholder="Auto-generated"
-                value={formData.access}
-                onChange={(e) =>
-                  setFormData({ ...formData, access: e.target.value })
-                }
-                readOnly
-              />
-              <button
-                type="button"
-                onClick={handleRegenerateUUID}
-                className="inline-flex items-center justify-center p-2 border border-gray-300 text-primary-600 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-1 focus:ring-offset-0 focus:ring-primary-500"
-                title="Generate new UUID"
-              >
-                <ShuffleIcon weight="bold" className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Order
-            </label>
-            <InputNumber
-              className="mt-1 block w-full! border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
-              size="large"
-              placeholder="Enter window order"
-              value={formData.order}
-              onChange={(value) =>
-                setFormData({ ...formData, order: value ?? 0 })
-              }
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Type
-            </label>
-            <Select
-              className="mt-1 block w-full  p-2 "
-              size="large"
-              placeholder="Select window type"
-              value={formData.type || undefined}
-              onChange={(value) => setFormData({ ...formData, type: value })}
-              options={[
-                { label: "Group", value: "group" },
-                { label: "Window", value: "window" },
-              ]}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Parent
-            </label>
-            <Select
-              className="mt-1 block w-full  p-2 "
-              size="large"
-              placeholder="Select parent window"
-              value={formData.parent || undefined}
-              onChange={(value) => setFormData({ ...formData, parent: value })}
-              options={
-                parentOptions.map((parent) => ({
-                  label: parent.data.name,
-                  value: parent.id,
-                })) || []
-              }
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Icon
+              Email
             </label>
             <Input
-              className="mt-1 block w-full  p-2 "
+              type="email"
+              className="mt-1 block w-full border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
               size="large"
-              placeholder="Select icon"
-              value={formData.icon || undefined}
+              allowClear
+              placeholder="Enter Email"
+              value={formData.email}
               onChange={(e) =>
-                setFormData({ ...formData, icon: e.target.value })
+                setFormData({ ...formData, email: e.target.value })
               }
             />
           </div>
-
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              URL
+              Employee Id
             </label>
             <Input
               type="text"
-              className="mt-1 block w-full p-2"
+              className="mt-1 block w-full border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
               size="large"
-              placeholder="Enter window URL"
-              value={formData.url}
+              allowClear
+              placeholder="Enter Employee Id"
+              value={formData.employee_id}
               onChange={(e) =>
-                setFormData({ ...formData, url: e.target.value })
+                setFormData({ ...formData, employee_id: e.target.value })
               }
             />
           </div>
-        </div>
 
-        <div className="space-y-2 mt-6">
-          <Checkbox
-            className="w-full bg-primary-100 px-6! py-4! rounded-lg border border-primary-600"
-            checked={formData.isParent}
-            onChange={(e) =>
-              setFormData({ ...formData, isParent: e.target.checked })
-            }
-          >
-            <div className="ml-2">
-              <div className="text-primary-900 font-semibold text-lg">
-                Is Parent?
-              </div>
-              <div className="text-primary-700">
-                If checked, this window will be the parent of all child windows.
-              </div>
+          <div className=""></div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div className="flex gap-2">
+              <Input.Password
+                className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
+                size="large"
+                allowClear
+                placeholder="Enter Password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+              />
+              <button
+                type="button"
+                onClick={generatePassword}
+                className="mt-1 px-4 bg-primary-100 hover:bg-primary-200 text-primary-700 border border-primary-300 rounded-lg transition duration-200 flex items-center gap-2 whitespace-nowrap"
+                title="Generate Password"
+              >
+                <ShuffleIcon size={20} weight="duotone" />
+                Generate
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPasswordSettings(!showPasswordSettings)}
+                className="mt-1 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 border border-gray-500 rounded-lg transition duration-200"
+                title="Password Settings"
+              >
+                <GearSixIcon size={20} weight="duotone" />
+              </button>
             </div>
-          </Checkbox>
+
+            {/* Password Settings Panel */}
+            {showPasswordSettings && (
+              <div className="mt-2 p-4 border border-gray-300 rounded-lg bg-gray-50 space-y-3">
+                <h3 className="font-semibold text-gray-700 mb-2">
+                  Password Generator Settings
+                </h3>
+
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600 w-24">Length:</span>
+                    <InputNumber
+                      min={4}
+                      max={32}
+                      value={passwordSettings.length}
+                      onChange={(value) =>
+                        setPasswordSettings({
+                          ...passwordSettings,
+                          length: value || 12,
+                        })
+                      }
+                      className="w-20"
+                    />
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={passwordSettings.uppercase}
+                        onChange={(e) =>
+                          setPasswordSettings({
+                            ...passwordSettings,
+                            uppercase: e.target.checked,
+                          })
+                        }
+                      />
+                      <span className="text-sm text-gray-700">
+                        Uppercase (A-Z)
+                      </span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={passwordSettings.lowercase}
+                        onChange={(e) =>
+                          setPasswordSettings({
+                            ...passwordSettings,
+                            lowercase: e.target.checked,
+                          })
+                        }
+                      />
+                      <span className="text-sm text-gray-700">
+                        Lowercase (a-z)
+                      </span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={passwordSettings.numbers}
+                        onChange={(e) =>
+                          setPasswordSettings({
+                            ...passwordSettings,
+                            numbers: e.target.checked,
+                          })
+                        }
+                      />
+                      <span className="text-sm text-gray-700">
+                        Numbers (0-9)
+                      </span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={passwordSettings.symbols}
+                        onChange={(e) =>
+                          setPasswordSettings({
+                            ...passwordSettings,
+                            symbols: e.target.checked,
+                          })
+                        }
+                      />
+                      <span className="text-sm text-gray-700">
+                        Symbols (!@#$%^&*)
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-gray-300">
+                  <button
+                    type="button"
+                    onClick={generatePassword}
+                    className="w-full px-4 py-2 bg-primary-100 hover:bg-primary-200 text-primary-700 border border-primary-300 rounded-lg transition duration-200 flex items-center justify-center gap-2"
+                  >
+                    <ShuffleIcon size={20} weight="duotone" />
+                    Generate Password
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-between mt-6">
@@ -436,7 +434,7 @@ function AdminWindowEditPage() {
               {submitting && (
                 <CircleNotchIcon className="animate-spin w-4 h-4 mr-2 inline" />
               )}
-              {submitting ? "Updating..." : "Update"}
+              {submitting ? "Creating..." : "Create"}
             </button>
           </div>
         </div>
@@ -445,4 +443,4 @@ function AdminWindowEditPage() {
   );
 }
 
-export default AdminWindowEditPage;
+export default AdminUserEditPage;

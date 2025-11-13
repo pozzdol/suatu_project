@@ -8,6 +8,7 @@ import Loading from "@/components/Loading";
 import Permit from "@/components/Permit";
 import { Input } from "antd";
 import { ArrowCircleLeftIcon, SpinnerGapIcon } from "@phosphor-icons/react";
+import useDocumentTitle from "@/hooks/useDocumentTitle";
 
 interface FormData {
   name: string;
@@ -53,6 +54,7 @@ function AdminRoleCreatePage() {
     initializePage();
   }, []);
 
+  useDocumentTitle(title || "Create Role");
   // -- PAGE LOAD END --
 
   // STATE MANAGEMENT

@@ -10,6 +10,7 @@ import Permit from "@/components/Permit";
 import requestApi from "@/utils/api";
 import { Modal } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import useDocumentTitle from "@/hooks/useDocumentTitle";
 
 type WindowData = Record<string, unknown> & {
   id: string;
@@ -80,6 +81,7 @@ export default function AdminUserIndexPage() {
     initializePage();
   }, []);
 
+  useDocumentTitle(title || "User Management");
   // FETCH DATA
   const [data, setData] = useState<WindowData[]>([]);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
@@ -89,15 +91,15 @@ export default function AdminUserIndexPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await requestApi.get("/general/setup/windows/list");
+      const response = await requestApi.get("/general/setup/users/list");
       if (response && response.data.success) {
-        setData(response.data.data.windows);
+        setData(response.data.data.users);
       } else {
-        toast.error("Failed to fetch window data");
+        toast.error("Failed to fetch user data");
       }
     } catch (error) {
-      console.error("Failed to fetch window data:", error);
-      toast.error("Failed to fetch window data");
+      console.error("Failed to fetch user data:", error);
+      toast.error("Failed to fetch user data");
     } finally {
       setLoading(false);
     }
@@ -211,7 +213,7 @@ export default function AdminUserIndexPage() {
         showOnMobile: true,
       },
       {
-        label: "Window Name",
+        label: "Name",
         field: "name",
         type: "text" as HeaderType,
         isNumeric: false,
@@ -221,8 +223,8 @@ export default function AdminUserIndexPage() {
         exportable: true,
       },
       {
-        label: "Url",
-        field: "url",
+        label: "Email",
+        field: "email",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -231,18 +233,8 @@ export default function AdminUserIndexPage() {
         exportable: true,
       },
       {
-        label: "Is Parent",
-        field: "data_isParent",
-        type: "dynamicSelect" as HeaderType,
-        options: getUniqueIsParent(data || []),
-        showOnMobile: true,
-        allowTextInput: true,
-        isMultiSelect: true,
-        exportable: true,
-      },
-      {
-        label: "Access",
-        field: "access",
+        label: "Role",
+        field: "role_name",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -251,8 +243,28 @@ export default function AdminUserIndexPage() {
         exportable: true,
       },
       {
-        label: "Icon",
-        field: "icon",
+        label: "Employee ID",
+        field: "employee_id",
+        type: "text" as HeaderType,
+        isNumeric: false,
+        isMultiSelect: false,
+        allowTextInput: false,
+        showOnMobile: true,
+        exportable: true,
+      },
+      {
+        label: "Department",
+        field: "department_id",
+        type: "text" as HeaderType,
+        isNumeric: false,
+        isMultiSelect: false,
+        allowTextInput: false,
+        showOnMobile: true,
+        exportable: true,
+      },
+      {
+        label: "Organization",
+        field: "organization_id",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -261,7 +273,7 @@ export default function AdminUserIndexPage() {
         exportable: true,
       },
     ],
-    [data]
+    []
   );
 
   const initialFilters = headers.reduce(
@@ -448,20 +460,19 @@ export default function AdminUserIndexPage() {
                 {row.name}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.url}
+                {row.email}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.data_isParent ? (
-                  <div className="text-emerald-600">Yes</div>
-                ) : (
-                  <div className="text-rose-600">No</div>
-                )}
+                {row.role_name}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.access}
+                {row.organization_name}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.icon}
+                {row.department_name}
+              </td>
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.employee_id}
               </td>
             </>
           );

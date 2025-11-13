@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoleWindowController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\WindowsController;
 use Illuminate\Support\Facades\Route;
 
@@ -48,4 +49,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Role Windows Routes
     Route::get('/general/setup/role-windows/role-id/{id}', [RoleWindowController::class, 'index']);
     Route::post('/general/setup/role-windows', [RoleWindowController::class, 'create']);
+
+    // User Management Route
+    Route::get('/general/setup/users/list', [UserController::class, 'index']);
+    Route::post('/general/setup/users', [UserController::class, 'create']);
+
+    Route::get('/general/setup/users/edit/{id}', [UserController::class, 'show']);
+    Route::put('/general/setup/users/edit/{id}', [UserController::class, 'update']);
 });

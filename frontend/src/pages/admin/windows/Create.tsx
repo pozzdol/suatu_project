@@ -12,6 +12,7 @@ import {
   ShuffleIcon,
 } from "@phosphor-icons/react";
 import { Checkbox, Input, InputNumber, Select } from "antd";
+import useDocumentTitle from "@/hooks/useDocumentTitle";
 
 interface FormData {
   name: string;
@@ -66,6 +67,7 @@ function AdminWindowCreatePage() {
     initializePage();
   }, []);
 
+  useDocumentTitle(title || "Create Window");
   // -- PAGE LOAD END --
 
   // STATE MANAGEMENT

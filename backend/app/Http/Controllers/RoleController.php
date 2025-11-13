@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Services\RoleUsageService;
+use Illuminate\Routing\Controller;
 
 class RoleController extends Controller
 {
@@ -185,13 +186,7 @@ class RoleController extends Controller
             }
 
             // Soft delete
-            $user = Auth::user();
-            $role->deleted = [
-                'deletedAt' => now()->toDateTimeString(),
-                'deletedBy' => $user->id ?? null,
-                'deletedByMail' => $user->email ?? null,
-            ];
-            $role->save();
+            $role->delete();
 
             return $this->apiResponse(null, 'Role deleted successfully.');
         } catch (\Exception $e) {
@@ -223,7 +218,6 @@ class RoleController extends Controller
 
             $deletedCount = 0;
             $notFoundIds = [];
-            $user = Auth::user();
 
             foreach ($validated['ids'] as $roleId) {
                 $role = Role::where('id', $roleId)
@@ -231,12 +225,7 @@ class RoleController extends Controller
                     ->first();
 
                 if ($role) {
-                    $role->deleted = [
-                        'deletedAt' => now()->toDateTimeString(),
-                        'deletedBy' => $user->id ?? null,
-                        'deletedByMail' => $user->email ?? null,
-                    ];
-                    $role->save();
+                    $role->delete();
                     $deletedCount++;
                 } else {
                     $notFoundIds[] = $roleId;

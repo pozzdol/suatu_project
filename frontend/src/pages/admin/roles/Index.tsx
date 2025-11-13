@@ -10,6 +10,7 @@ import Permit from "@/components/Permit";
 import requestApi from "@/utils/api";
 import { Modal } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import useDocumentTitle from "@/hooks/useDocumentTitle";
 
 type WindowData = Record<string, unknown> & {
   id: string;
@@ -79,6 +80,8 @@ export default function AdminRoleIndexPage() {
 
     initializePage();
   }, []);
+
+  useDocumentTitle(title || "Roles Management");
 
   // FETCH DATA
   const [data, setData] = useState<WindowData[]>([]);
