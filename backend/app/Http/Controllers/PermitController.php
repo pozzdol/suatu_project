@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\RoleWindow;
 use App\Models\Window;
 use App\Traits\ApiResponse;
-use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 
 class PermitController extends Controller
@@ -16,12 +15,12 @@ class PermitController extends Controller
     {
 
         $window = Window::where('data_access_id', $access)->first();
-        if (!$window) {
+        if (! $window) {
             return $this->apiError('Invalid permit access.', null, 404);
         }
 
         $user = Auth::user();
-        if (!$user) {
+        if (! $user) {
             return $this->apiError('Unauthorized.', null, 401);
         }
 
@@ -38,18 +37,18 @@ class PermitController extends Controller
         $payload = [
             'permit' => [
                 'permission' => $setPermit,
-                'isEditable' => $permit ? (bool)$permit->isEdit : false,
-                'isAdmin'    => $permit ? (bool)$permit->isAdmin : false,
+                'isEditable' => $permit ? (bool) $permit->isEdit : false,
+                'isAdmin' => $permit ? (bool) $permit->isAdmin : false,
             ],
             'page' => [
-                'id'     => $window->id,
-                'name'   => $window->data['name'],
+                'id' => $window->id,
+                'name' => $window->data['name'],
                 'description' => $window->data['subtitle'],
                 'icon' => $window->data['icon'],
                 'type' => $window->data['type'],
                 'order' => $window->data['order'],
                 'url' => $window->data['url'],
-                'isParent' =>  (bool)$window->data['isParent'],
+                'isParent' => (bool) $window->data['isParent'],
             ],
         ];
 

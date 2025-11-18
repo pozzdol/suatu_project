@@ -141,7 +141,7 @@ function Layout({ children, isActive }: LayoutProps) {
         {isGroup ? (
           <button
             onClick={() => toggleGroup(menu.id)}
-            className={`flex items-center ${
+            className={`flex mb-1 items-center ${
               isSidebarOpen ? "gap-2" : "justify-center"
             } font-medium w-full text-left ${
               isActive === menu.url

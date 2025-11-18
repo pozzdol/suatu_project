@@ -22,7 +22,7 @@ interface FormData {
   password: string;
 }
 
-function AdminUserCreatePage() {
+function AdminDepartmentCreatePage() {
   // PAGE LOAD
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -421,4 +421,4 @@ function AdminUserCreatePage() {
   );
 }
 
-export default AdminUserCreatePage;
+export default AdminDepartmentCreatePage;

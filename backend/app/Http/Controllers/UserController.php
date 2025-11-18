@@ -7,7 +7,6 @@ use App\Models\Role;
 use App\Models\User;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -41,7 +40,7 @@ class UserController extends Controller
 
     public function create(Request $request)
     {
-       $rules = [
+        $rules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
             'employee_id' => 'nullable|string|max:100|unique:users,employee_id',
@@ -137,13 +136,13 @@ class UserController extends Controller
             // Prioritaskan ID dari URL, fallback ke body
             $userId = $id ?? $request->input('id');
 
-            if (!$userId) {
+            if (! $userId) {
                 return $this->apiError('User ID is required.', null, 422);
             }
 
             $user = User::find($userId);
 
-            if (!$user) {
+            if (! $user) {
                 return $this->apiError('User not found.', null, 404);
             }
 
@@ -151,7 +150,7 @@ class UserController extends Controller
 
             return $this->apiResponse(null, 'User deleted successfully.');
         } catch (\Exception $e) {
-            Log::error('User deletion error: ' . $e->getMessage());
+            Log::error('User deletion error: '.$e->getMessage());
 
             return $this->apiError('Failed to delete user.', null, 500);
         }
@@ -184,8 +183,8 @@ class UserController extends Controller
             }
 
             $message = "{$deletedCount} user(s) deleted successfully.";
-            if (!empty($notFoundIds)) {
-                $message .= " Not found: " . implode(', ', $notFoundIds);
+            if (! empty($notFoundIds)) {
+                $message .= ' Not found: '.implode(', ', $notFoundIds);
             }
 
             return $this->apiResponse([
@@ -193,7 +192,7 @@ class UserController extends Controller
                 'not_found' => $notFoundIds,
             ], $message);
         } catch (\Exception $e) {
-            Log::error('Mass user deletion error: ' . $e->getMessage());
+            Log::error('Mass user deletion error: '.$e->getMessage());
 
             return $this->apiError('Failed to delete users.', null, 500);
         }

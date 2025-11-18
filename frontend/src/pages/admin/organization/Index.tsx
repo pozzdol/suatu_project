@@ -40,7 +40,7 @@ interface TableHeader {
   stickyPosition?: number;
 }
 
-export default function AdminUserIndexPage() {
+export default function AdminOrganizationIndexPage() {
   const navigate = useNavigate();
   const [permit, setPermit] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
@@ -57,7 +57,7 @@ export default function AdminUserIndexPage() {
       try {
         setLoading(true);
         const pageData = await validatePermit(
-          "f246e11b2401428fb586e6fb49a2be96"
+          "2798ebc6f8054252af33675cb646df01"
         );
 
         if (pageData && pageData.success && pageData.data.permit.permission) {
@@ -81,7 +81,7 @@ export default function AdminUserIndexPage() {
     initializePage();
   }, []);
 
-  useDocumentTitle(title || "User Management");
+  useDocumentTitle(title || "Department");
   // FETCH DATA
   const [data, setData] = useState<WindowData[]>([]);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);

@@ -8,8 +8,12 @@ import AdminRoleEditPage from "@/pages/admin/roles/Edit";
 import AdminUserIndexPage from "@/pages/admin/users/Index";
 import AdminUserCreatePage from "@/pages/admin/users/Create";
 import AdminRoleIndexPage from "@/pages/admin/roles/Index";
-import AdminWindowIndexPage from "@/pages/admin/windows/Index";
 import AdminUserEditPage from "@/pages/admin/users/Edit";
+import AdminWindowIndexPage from "@/pages/admin/windows";
+import AdminDepartmentIndexPage from "@/pages/admin/department/Index";
+import AdminDepartmentCreatePage from "@/pages/admin/department/Create";
+import AdminOrganizationIndexPage from "@/pages/admin/organization/Index";
+import AdminOrganizationCreatePage from "@/pages/admin/organization/Create";
 
 function SetupRoutes() {
   return (
@@ -77,6 +81,56 @@ function SetupRoutes() {
         element={
           <Layout isActive="/general-setup/user-management">
             <AdminUserCreatePage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/user-management/:id"
+        element={
+          <Layout isActive="/general-setup/user-management">
+            <AdminUserEditPage />
+          </Layout>
+        }
+      />
+
+      <Route
+        path="/department"
+        element={
+          <Layout isActive="/general-setup/department">
+            <AdminDepartmentIndexPage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/department/create"
+        element={
+          <Layout isActive="/general-setup/department">
+            <AdminDepartmentCreatePage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/user-management/:id"
+        element={
+          <Layout isActive="/general-setup/user-management">
+            <AdminUserEditPage />
+          </Layout>
+        }
+      />
+
+      <Route
+        path="/organization"
+        element={
+          <Layout isActive="/general-setup/organization">
+            <AdminOrganizationIndexPage />
+          </Layout>
+        }
+      />
+      <Route
+        path="/organization/create"
+        element={
+          <Layout isActive="/general-setup/organization">
+            <AdminOrganizationCreatePage />
           </Layout>
         }
       />

@@ -5,13 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\Role;
 use App\Models\RoleWindow;
 use App\Models\Window;
+use App\Services\RoleUsageService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use App\Services\RoleUsageService;
-use Illuminate\Routing\Controller;
 
 class RoleController extends Controller
 {
@@ -62,7 +61,7 @@ class RoleController extends Controller
             ->whereNull('deleted')
             ->first();
 
-        if (!$roleData) {
+        if (! $roleData) {
             return $this->apiError('Role not found.', null, 404);
         }
 
@@ -91,11 +90,10 @@ class RoleController extends Controller
 
         $extra = array_diff(array_keys($request->all()), array_keys($rules));
         if (! empty($extra)) {
-            return $this->apiError('Invalid fields: ' . implode(', ', $extra), null, 422);
+            return $this->apiError('Invalid fields: '.implode(', ', $extra), null, 422);
         }
 
         $validated = Validator::make($request->all(), $rules)->validate();
-
 
         try {
             $role = new Role;
@@ -104,7 +102,7 @@ class RoleController extends Controller
 
             return $this->apiResponse($role, 'Role created successfully.', true, 201);
         } catch (\Exception $e) {
-            Log::error('Role creation error: ' . $e->getMessage());
+            Log::error('Role creation error: '.$e->getMessage());
 
             return $this->apiError('Failed to create role.', null, 500);
         }
@@ -126,7 +124,7 @@ class RoleController extends Controller
 
         $extra = array_diff(array_keys($request->all()), array_keys($rules));
         if (! empty($extra)) {
-            return $this->apiError('Invalid fields: ' . implode(', ', $extra), null, 422);
+            return $this->apiError('Invalid fields: '.implode(', ', $extra), null, 422);
         }
 
         $validated = Validator::make($request->all(), $rules)->validate();
@@ -149,7 +147,7 @@ class RoleController extends Controller
 
             return $this->apiResponse(['role' => $payload], 'Role updated successfully.');
         } catch (\Exception $e) {
-            Log::error('Role update error: ' . $e->getMessage());
+            Log::error('Role update error: '.$e->getMessage());
 
             return $this->apiError('Failed to update role.', null, 500);
         }
@@ -165,7 +163,7 @@ class RoleController extends Controller
             // Prioritaskan ID dari URL, fallback ke body
             $roleId = $id ?? $request->input('id');
 
-            if (!$roleId) {
+            if (! $roleId) {
                 return $this->apiError('Role ID is required.', null, 422);
             }
 
@@ -173,7 +171,7 @@ class RoleController extends Controller
                 ->whereNull('deleted')
                 ->first();
 
-            if (!$role) {
+            if (! $role) {
                 return $this->apiError('Role not found.', null, 404);
             }
 
@@ -181,7 +179,7 @@ class RoleController extends Controller
             $userRoleId = Auth::user()->role_id;
             $permit = $this->getPermit($userRoleId, '17df972f2f8345b1b46d9b29c03c0934');
 
-            if (!$permit) {
+            if (! $permit) {
                 return $this->apiError('Unauthorized to delete role.', null, 403);
             }
 
@@ -190,7 +188,7 @@ class RoleController extends Controller
 
             return $this->apiResponse(null, 'Role deleted successfully.');
         } catch (\Exception $e) {
-            Log::error('Role deletion error: ' . $e->getMessage());
+            Log::error('Role deletion error: '.$e->getMessage());
 
             return $this->apiError('Failed to delete role.', null, 500);
         }
@@ -212,7 +210,7 @@ class RoleController extends Controller
             $userRoleId = Auth::user()->role_id;
             $permit = $this->getPermit($userRoleId, '17df972f2f8345b1b46d9b29c03c0934');
 
-            if (!$permit) {
+            if (! $permit) {
                 return $this->apiError('Unauthorized to delete roles.', null, 403);
             }
 
@@ -233,8 +231,8 @@ class RoleController extends Controller
             }
 
             $message = "{$deletedCount} role(s) deleted successfully.";
-            if (!empty($notFoundIds)) {
-                $message .= " Not found: " . implode(', ', $notFoundIds);
+            if (! empty($notFoundIds)) {
+                $message .= ' Not found: '.implode(', ', $notFoundIds);
             }
 
             return $this->apiResponse([
@@ -242,7 +240,7 @@ class RoleController extends Controller
                 'not_found' => $notFoundIds,
             ], $message);
         } catch (\Exception $e) {
-            Log::error('Mass role deletion error: ' . $e->getMessage());
+            Log::error('Mass role deletion error: '.$e->getMessage());
 
             return $this->apiError('Failed to delete roles.', null, 500);
         }
@@ -251,6 +249,7 @@ class RoleController extends Controller
     public function usage($roleId, RoleUsageService $service)
     {
         $result = $service->findUsage($roleId);
+
         return response()->json($result);
     }
 }

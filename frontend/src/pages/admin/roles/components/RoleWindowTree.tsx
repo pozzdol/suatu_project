@@ -225,7 +225,8 @@ function RoleWindowTree({ permitData, id }: RoleWindowTreeProps) {
         <div
           className={`flex justify-between items-center gap-3 py-2.5 px-3 hover:bg-gray-50 rounded-lg transition-colors duration-200 ${
             isGroup && "cursor-pointer"
-          } ${level! > 0 ? "ml-4" : ""}`}
+          }`}
+          style={{ marginLeft: `${level * 16}px` }}
           onClick={() => isGroup && toggleGroup(item.key)}
         >
           <div className="flex items-center gap-3">

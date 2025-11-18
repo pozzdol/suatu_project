@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\RoleWindow;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
 
 class RoleWindowController extends Controller
 {
     use ApiResponse;
+
     public function index($id)
     {
         $roleWindows = RoleWindow::where('role_id', $id)->get();
@@ -44,7 +44,7 @@ class RoleWindowController extends Controller
 
             $record = $existingByWindow->get($windowId);
 
-            if (!$record) {
+            if (! $record) {
                 RoleWindow::create([
                     'role_id' => $roleId,
                     'window_id' => $windowId,

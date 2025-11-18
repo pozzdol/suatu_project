@@ -3,7 +3,9 @@ import {
   BriefcaseIcon,
   GearIcon,
   HouseIcon,
+  KeyIcon,
   UserCircleGearIcon,
+  WrenchIcon,
 } from "@phosphor-icons/react";
 
 interface IconRendererProps {
@@ -28,6 +30,8 @@ export function IconRenderer({
     AppWindow: AppWindowIcon,
     Briefcase: BriefcaseIcon,
     UserCircleGear: UserCircleGearIcon,
+    Wrench: WrenchIcon,
+    Key: KeyIcon,
   };
 
   const Icon = iconMap[name] || AppWindowIcon; // Default ke AppWindowIcon jika tidak ditemukan

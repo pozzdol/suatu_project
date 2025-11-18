@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoleWindowController;
@@ -60,4 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/general/setup/users/mass-delete', [UserController::class, 'massDestroy']);
     Route::delete('/general/setup/users/{id}', [UserController::class, 'destroy']);
     Route::delete('/general/setup/users', [UserController::class, 'destroy']);
+
+    // Organization Routes
+    Route::post('/general/setup/organizations', [OrganizationController::class, 'create']);
 });
