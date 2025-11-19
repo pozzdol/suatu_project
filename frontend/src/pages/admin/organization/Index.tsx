@@ -11,13 +11,13 @@ import requestApi from "@/utils/api";
 import { Modal } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
+import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react";
 
 type WindowData = Record<string, unknown> & {
   id: string;
   name: string;
-  url: string;
-  data_isParent: boolean;
-  access: string;
+  address: string;
+  is_active: boolean;
 };
 
 interface TableHeader {
@@ -91,9 +91,12 @@ export default function AdminOrganizationIndexPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await requestApi.get("/general/setup/users/list");
+      const response = await requestApi.get(
+        "/general/setup/organizations/list"
+      );
       if (response && response.data.success) {
-        setData(response.data.data.users);
+        setData(response.data.data.organizations);
+        // console.log(JSON.stringify(response.data.data.organizations));
       } else {
         toast.error("Failed to fetch user data");
       }
@@ -146,7 +149,7 @@ export default function AdminOrganizationIndexPage() {
 
     try {
       const response = await requestApi.post(
-        "/general/setup/users/mass-delete",
+        "/general/setup/organizations/mass-delete",
         {
           ids: pendingDeleteIds,
         }
@@ -180,23 +183,6 @@ export default function AdminOrganizationIndexPage() {
   };
 
   // TABLE HEADERS
-  const getUniqueIsParent = (
-    data: WindowData[]
-  ): { value: string; label: string }[] => {
-    if (!data) return [];
-
-    const uniqueIsParent = Array.from(
-      new Set(data.map((item) => item.data_isParent))
-    )
-      .sort()
-      .map((item) => ({
-        value: String(item),
-        label: item ? "Yes" : "No",
-      }));
-
-    return [...uniqueIsParent];
-  };
-
   const headers: TableHeader[] = useMemo(
     () => [
       {
@@ -223,8 +209,8 @@ export default function AdminOrganizationIndexPage() {
         exportable: true,
       },
       {
-        label: "Email",
-        field: "email",
+        label: "Address",
+        field: "address",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -233,38 +219,8 @@ export default function AdminOrganizationIndexPage() {
         exportable: true,
       },
       {
-        label: "Role",
-        field: "role_name",
-        type: "text" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-      },
-      {
-        label: "Employee ID",
-        field: "employee_id",
-        type: "text" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-      },
-      {
-        label: "Department",
-        field: "department_id",
-        type: "text" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-      },
-      {
-        label: "Organization",
-        field: "organization_id",
+        label: "Is Active",
+        field: "is_active",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -460,19 +416,18 @@ export default function AdminOrganizationIndexPage() {
                 {row.name}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.email}
+                {row.address}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.role_name}
-              </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.employee_id}
-              </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.department_name}
-              </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.organization_name}
+                {row.is_active ? (
+                  <div className="w-8 h-8 flex justify-center items-center rounded-full bg-emerald-100 text-emerald-600">
+                    <CheckCircleIcon weight="duotone" className="w-4 h-4" />
+                  </div>
+                ) : (
+                  <div className="w-8 h-8 flex justify-center items-center rounded-full bg-rose-100 text-rose-600">
+                    <XCircleIcon weight="duotone" className="w-4 h-4" />
+                  </div>
+                )}
               </td>
             </>
           );
@@ -538,7 +493,7 @@ export default function AdminOrganizationIndexPage() {
           </p>
           <div className="bg-red-50 border border-red-200 rounded-xl p-4">
             <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
                 <span className="text-red-600 text-sm font-bold">!</span>
               </div>
               <div>

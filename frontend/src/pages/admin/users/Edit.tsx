@@ -71,15 +71,6 @@ function AdminUserEditPage() {
   // -- PAGE LOAD END --
 
   // STATE MANAGEMENT
-  const [showPasswordSettings, setShowPasswordSettings] = useState(false);
-  const [passwordSettings, setPasswordSettings] = useState({
-    length: 12,
-    uppercase: true,
-    lowercase: true,
-    numbers: true,
-    symbols: true,
-  });
-
   const [originalData, setOriginalData] = useState<FormData | null>(null);
   const initialFormData: FormData = {
     name: "",
@@ -90,10 +81,18 @@ function AdminUserEditPage() {
     department_id: "",
     organization_id: "",
   };
-
+  const [loadingfetch, setLoadingfetch] = useState(false);
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
   const [roles, setRoles] = useState<{ label: string; value: string }[]>([]);
+  const [organization, setOrganization] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [organizationSelection, setOrganizationSelection] =
+    useState<string>("");
+  const [departments, setDepartments] = useState<
+    { label: string; value: string }[]
+  >([]);
   // STATE MANAGEMENT END
 
   // FETCH DATA
@@ -103,8 +102,12 @@ function AdminUserEditPage() {
       const response = await requestApi.get(`/general/setup/users/edit/${id}`);
 
       if (response.data.success) {
-        setFormData(response.data.data.user);
-        setOriginalData(response.data.data.user);
+        const userData = response.data.data.user;
+        setFormData(userData);
+        setOriginalData(userData);
+        if (userData.organization_id) {
+          setOrganizationSelection(userData.organization_id);
+        }
       } else {
         toast.error("Failed to fetch user data");
       }
@@ -135,6 +138,65 @@ function AdminUserEditPage() {
       return [];
     }
   };
+
+  const fetchOrganizations = async () => {
+    setLoading(true);
+    try {
+      const response = await requestApi.get(
+        "/general/setup/organizations/list"
+      );
+      if (response.data.success) {
+        const organizationsData = response.data.data.organizations.map(
+          (organization: any) => ({
+            label: organization.name,
+            value: organization.id,
+          })
+        );
+        setOrganization(organizationsData);
+      } else {
+        toast.error("Failed to fetch organizations");
+        return [];
+      }
+    } catch (error) {
+      toast.error("Failed to fetch organizations");
+      console.error("Failed to fetch organizations:", error);
+      return [];
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchDepartments = async (organizationId: string) => {
+    if (!organizationId) {
+      setDepartments([]);
+      return;
+    }
+
+    setLoadingfetch(true);
+    try {
+      const response = await requestApi.get(
+        "/general/setup/departments/organization/" + organizationId
+      );
+      if (response.data.success) {
+        const departmentsData = response.data.data.departments.map(
+          (department: any) => ({
+            label: department.name,
+            value: department.id,
+          })
+        );
+        setDepartments(departmentsData);
+      } else {
+        toast.error("Failed to fetch departments");
+        setDepartments([]);
+      }
+    } catch (error) {
+      toast.error("Failed to fetch departments");
+      console.error("Failed to fetch departments:", error);
+      setDepartments([]);
+    } finally {
+      setLoadingfetch(false);
+    }
+  };
   // FETCH DATA END
 
   // EFFECTS
@@ -142,8 +204,16 @@ function AdminUserEditPage() {
     if (permit) {
       fetchData();
       fetchRoles();
+      fetchOrganizations();
     }
   }, [permit]);
+
+  // Fetch departments saat organizationSelection berubah
+  useEffect(() => {
+    if (organizationSelection) {
+      fetchDepartments(organizationSelection);
+    }
+  }, [organizationSelection]);
   // EFFECTS END
 
   //  HELPERS
@@ -298,21 +368,6 @@ function AdminUserEditPage() {
           <div className=""></div>
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Department
-            </label>
-            <Select
-              className="mt-1 block w-full  p-2 focus:ring-sky-500 focus:border-sky-500"
-              size="large"
-              allowClear
-              placeholder="Enter Department"
-              value={formData.department_id}
-              onChange={(value) =>
-                setFormData({ ...formData, department_id: value })
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
               Organization
             </label>
             <Select
@@ -321,10 +376,39 @@ function AdminUserEditPage() {
               allowClear
               placeholder="Enter Organization"
               value={formData.organization_id}
-              onChange={(value) =>
-                setFormData({ ...formData, organization_id: value })
-              }
+              onChange={(value) => {
+                setFormData({ ...formData, organization_id: value || "" });
+                setOrganizationSelection(value || "");
+              }}
+              options={organization}
             />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Department
+            </label>
+            {loadingfetch ? (
+              <Select
+                className="mt-1 block w-full  p-2 focus:ring-sky-500 focus:border-sky-500"
+                size="large"
+                allowClear
+                placeholder="Enter Department"
+                disabled
+                options={departments}
+              />
+            ) : (
+              <Select
+                className="mt-1 block w-full  p-2 focus:ring-sky-500 focus:border-sky-500"
+                size="large"
+                allowClear
+                placeholder="Enter Department"
+                value={formData.department_id}
+                onChange={(value) =>
+                  setFormData({ ...formData, department_id: value || "" })
+                }
+                options={departments}
+              />
+            )}
           </div>
         </div>
 

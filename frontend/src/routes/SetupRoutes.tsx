@@ -14,6 +14,8 @@ import AdminDepartmentIndexPage from "@/pages/admin/department/Index";
 import AdminDepartmentCreatePage from "@/pages/admin/department/Create";
 import AdminOrganizationIndexPage from "@/pages/admin/organization/Index";
 import AdminOrganizationCreatePage from "@/pages/admin/organization/Create";
+import AdminOrganizationEditPage from "@/pages/admin/organization/Edit";
+import AdminDepartmentEditPage from "@/pages/admin/department/Edit";
 
 function SetupRoutes() {
   return (
@@ -110,10 +112,10 @@ function SetupRoutes() {
         }
       />
       <Route
-        path="/user-management/:id"
+        path="/department/:id"
         element={
-          <Layout isActive="/general-setup/user-management">
-            <AdminUserEditPage />
+          <Layout isActive="/general-setup/department">
+            <AdminDepartmentEditPage />
           </Layout>
         }
       />
@@ -135,10 +137,10 @@ function SetupRoutes() {
         }
       />
       <Route
-        path="/user-management/:id"
+        path="/organization/:id"
         element={
-          <Layout isActive="/general-setup/user-management">
-            <AdminUserEditPage />
+          <Layout isActive="/general-setup/organization">
+            <AdminOrganizationEditPage />
           </Layout>
         }
       />

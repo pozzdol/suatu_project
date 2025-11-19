@@ -9,13 +9,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
-class Organization extends Model
+class Departments extends Model
 {
     use Auditable;
     use HasFactory;
     use SoftDeletes;
 
-    protected $table = 'organizations';
+    protected $table = 'departments';
 
     protected $primaryKey = 'id';
 
@@ -30,8 +30,11 @@ class Organization extends Model
     protected $casts = [
         'created' => 'array',
         'updated' => 'array',
-        'deleted' => 'array',
         'data' => 'array',
+
+        'data_organization_id' => 'string',
+
+        'deleted' => 'array',
         'deleted_at' => 'datetime',
     ];
 
@@ -44,10 +47,9 @@ class Organization extends Model
         });
     }
 
-    // RELATIONS
-    public function users()
+    public function organization()
     {
-        return $this->hasMany(User::class, 'organization_id', 'id');
+        return $this->belongsTo(Organization::class, 'data_organization_id');
     }
 
     protected function runSoftDelete()
@@ -56,7 +58,7 @@ class Organization extends Model
 
         $time = $this->freshTimestampString();
 
-        $existingMeta = $this->deleted ?? [];
+        $existingMeta = is_array($this->deleted) ? $this->deleted : [];
 
         $meta = array_merge($existingMeta, [
             'at' => $time,

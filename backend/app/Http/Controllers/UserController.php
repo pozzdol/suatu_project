@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Mail\UserCreated;
+use App\Models\Departments;
+use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
 use App\Traits\ApiResponse;
@@ -31,7 +33,9 @@ class UserController extends Controller
                 'role_name' => $roleName ? $roleName->data['name'] : null,
                 'employee_id' => $user->employee_id,
                 'department_id' => $user->department_id,
+                'department_name' => Departments::find($user->department_id)->data['name'] ?? null,
                 'organization_id' => $user->organization_id,
+                'organization_name' => Organization::find($user->organization_id)->data['name'] ?? null,
             ];
         });
 

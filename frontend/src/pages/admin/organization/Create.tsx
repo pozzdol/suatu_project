@@ -37,7 +37,7 @@ function AdminOrganizationCreatePage() {
       try {
         setLoading(true);
         const pageData = await validatePermit(
-          "f246e11b2401428fb586e6fb49a2be96"
+          "2798ebc6f8054252af33675cb646df01"
         );
 
         if (pageData && pageData.success && pageData.data.permit.permission) {
@@ -125,12 +125,12 @@ function AdminOrganizationCreatePage() {
       if (response && response.data.success) {
         toast.success("Organization created successfully");
         // console.log(JSON.stringify(response.data.data));
-        // navigate(`${indexUrl}/${response.data.data.organization.id}`);
+        navigate(`${indexUrl}/${response.data.data.organizations.id}`);
       } else {
         toast.error("Failed to create organization");
       }
     } catch (error) {
-      toast.error("Failed to create organization asdfasdf");
+      toast.error("Failed to create organization");
       console.error("Failed to create organization:", error);
     } finally {
       setSubmitting(false);

@@ -6,20 +6,14 @@ import { requestApi } from "@/utils/api";
 import { validatePermit } from "@/utils/validation";
 import Loading from "@/components/Loading";
 import Permit from "@/components/Permit";
-import {
-  ArrowCircleLeftIcon,
-  CircleNotchIcon,
-  GearSixIcon,
-  ShuffleIcon,
-} from "@phosphor-icons/react";
-import { Checkbox, Input, InputNumber } from "antd";
+import { ArrowCircleLeftIcon, CircleNotchIcon } from "@phosphor-icons/react";
+import { Input, Select } from "antd";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
 
 interface FormData {
   name: string;
-  email: string;
-  employee_id: string;
-  password: string;
+  description: string;
+  organization: string;
 }
 
 function AdminDepartmentCreatePage() {
@@ -38,7 +32,7 @@ function AdminDepartmentCreatePage() {
       try {
         setLoading(true);
         const pageData = await validatePermit(
-          "f246e11b2401428fb586e6fb49a2be96"
+          "3e8645ee994a4189bea1d8126ef5f22b"
         );
 
         if (pageData && pageData.success && pageData.data.permit.permission) {
@@ -63,64 +57,57 @@ function AdminDepartmentCreatePage() {
     initializePage();
   }, []);
 
-  useDocumentTitle(title || "Admin User Create");
+  useDocumentTitle(title || "Create Organization");
   // -- PAGE LOAD END --
 
   // STATE MANAGEMENT
-  const [showPasswordSettings, setShowPasswordSettings] = useState(false);
-  const [passwordSettings, setPasswordSettings] = useState({
-    length: 12,
-    uppercase: true,
-    lowercase: true,
-    numbers: true,
-    symbols: true,
-  });
-
   const initialFormData: FormData = {
     name: "",
-    email: "",
-    employee_id: "",
-    password: "",
+    description: "",
+    organization: "",
   };
 
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
+  const [organizationData, setOrganizationData] = useState([]);
   // STATE MANAGEMENT END
 
   // FETCH DATA
+  const fetchOrganizations = async () => {
+    setLoading(true);
+    try {
+      const response = await requestApi.get(
+        "/general/setup/organizations/list"
+      );
+      if (response && response.data.success) {
+        // console.log(JSON.stringify(response.data.data));
+        setOrganizationData(
+          response.data.data.organizations.map((organization: any) => ({
+            value: organization.id,
+            label: organization.name,
+          }))
+        );
+      } else {
+        toast.error("Failed to fetch organizations");
+      }
+    } catch (error) {
+      toast.error("Failed to fetch organizations");
+      console.error("Failed to fetch organizations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   // FETCH DATA END
 
   // EFFECTS
   useEffect(() => {
     if (permit) {
-      // fetchData();
+      fetchOrganizations();
     }
   }, [permit]);
   // EFFECTS END
 
   //  HELPERS
-  const generatePassword = () => {
-    const { length, uppercase, lowercase, numbers, symbols } = passwordSettings;
-
-    let charset = "";
-    if (uppercase) charset += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    if (lowercase) charset += "abcdefghijklmnopqrstuvwxyz";
-    if (numbers) charset += "0123456789";
-    if (symbols) charset += "!@#$%^&*()_+-=[]{}|;:,.<>?";
-
-    if (charset === "") {
-      toast.error("Please select at least one character type");
-      return;
-    }
-
-    let password = "";
-    for (let i = 0; i < length; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-
-    setFormData({ ...formData, password });
-    toast.success("Password generated!");
-  };
   // HELPERS END
 
   // FUNCTIONS
@@ -133,34 +120,43 @@ function AdminDepartmentCreatePage() {
     if (submitting) return;
 
     if (!formData.name.trim()) {
-      toast.error("Name is required");
+      toast.error("Organization name is required");
       return;
     }
 
-    if (!formData.email.trim()) {
-      toast.error("Email is required");
+    if (!formData.organization.trim()) {
+      toast.error("Organization name is required");
       return;
     }
 
-    if (!formData.employee_id.trim()) {
-      toast.error("Employee ID is required");
-      return;
+    // Buat object payload, hanya kirim address jika tidak kosong
+    const normalizedFormData: Record<string, any> = {
+      name: formData.name.trim(),
+      organization: formData.organization,
+    };
+
+    // Hanya tambahkan address jika tidak kosong
+    if (formData.description.trim()) {
+      normalizedFormData.description = formData.description.trim();
     }
 
     setSubmitting(true);
     try {
-      // console.log("Form Data to submit:", JSON.stringify(formData));
-      const response = await requestApi.post("/general/setup/users", formData);
+      // console.log("Form Data to submit:", JSON.stringify(normalizedFormData));
+      const response = await requestApi.post(
+        "/general/setup/departments",
+        normalizedFormData
+      );
       if (response && response.data.success) {
-        toast.success("User created successfully");
-        console.log(JSON.stringify(response.data.data));
-        navigate(`${indexUrl}/${response.data.data.user.id}`);
+        toast.success("Organization created successfully");
+        // console.log(JSON.stringify(response.data.data));
+        navigate(`${indexUrl}/${response.data.data.department.id}`);
       } else {
-        toast.error("Failed to create user");
+        toast.error("Failed to create organization");
       }
     } catch (error) {
-      toast.error("Failed to create user");
-      console.error("Failed to create user:", error);
+      toast.error("Failed to create organization");
+      console.error("Failed to create organization:", error);
     } finally {
       setSubmitting(false);
     }
@@ -202,14 +198,14 @@ function AdminDepartmentCreatePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Name
+              Department Name <span className="text-red-500 ml-1">*</span>
             </label>
             <Input
               type="text"
-              className="mt-1 block w-full border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
+              className="block w-full border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
               size="large"
               allowClear
-              placeholder="Enter User Name"
+              placeholder="Enter Department Name"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
@@ -218,173 +214,37 @@ function AdminDepartmentCreatePage() {
           </div>
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Email
+              Department Description{" "}
+              <span className="text-xs italic">(optional)</span>
             </label>
-            <Input
-              type="email"
-              className="mt-1 block w-full border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
+            <Input.TextArea
+              rows={1}
+              className="block w-full border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
               size="large"
-              allowClear
-              placeholder="Enter Email"
-              value={formData.email}
+              placeholder="Enter Full Department Description"
+              value={formData.description}
               onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
+                setFormData({ ...formData, description: e.target.value })
               }
             />
           </div>
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Employee Id
+              Organization
             </label>
-            <Input
-              type="text"
-              className="mt-1 block w-full border border-gray-300  p-2 focus:ring-sky-500 focus:border-sky-500"
+            <Select
               size="large"
-              allowClear
-              placeholder="Enter Employee Id"
-              value={formData.employee_id}
-              onChange={(e) =>
-                setFormData({ ...formData, employee_id: e.target.value })
+              className="w-full"
+              placeholder="Select Organization"
+              value={formData.organization || undefined}
+              onChange={(value) =>
+                setFormData({ ...formData, organization: value })
               }
+              options={organizationData}
             />
           </div>
 
           <div className=""></div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <div className="flex gap-2">
-              <Input.Password
-                className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
-                size="large"
-                allowClear
-                placeholder="Enter Password"
-                value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-              />
-              <button
-                type="button"
-                onClick={generatePassword}
-                className="mt-1 px-4 bg-primary-100 hover:bg-primary-200 text-primary-700 border border-primary-300 rounded-lg transition duration-200 flex items-center gap-2 whitespace-nowrap"
-                title="Generate Password"
-              >
-                <ShuffleIcon size={20} weight="duotone" />
-                Generate
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowPasswordSettings(!showPasswordSettings)}
-                className="mt-1 px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 border border-gray-500 rounded-lg transition duration-200"
-                title="Password Settings"
-              >
-                <GearSixIcon size={20} weight="duotone" />
-              </button>
-            </div>
-
-            {/* Password Settings Panel */}
-            {showPasswordSettings && (
-              <div className="mt-2 p-4 border border-gray-300 rounded-lg bg-gray-50 space-y-3">
-                <h3 className="font-semibold text-gray-700 mb-2">
-                  Password Generator Settings
-                </h3>
-
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600 w-24">Length:</span>
-                    <InputNumber
-                      min={4}
-                      max={32}
-                      value={passwordSettings.length}
-                      onChange={(value) =>
-                        setPasswordSettings({
-                          ...passwordSettings,
-                          length: value || 12,
-                        })
-                      }
-                      className="w-20"
-                    />
-                  </label>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        checked={passwordSettings.uppercase}
-                        onChange={(e) =>
-                          setPasswordSettings({
-                            ...passwordSettings,
-                            uppercase: e.target.checked,
-                          })
-                        }
-                      />
-                      <span className="text-sm text-gray-700">
-                        Uppercase (A-Z)
-                      </span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        checked={passwordSettings.lowercase}
-                        onChange={(e) =>
-                          setPasswordSettings({
-                            ...passwordSettings,
-                            lowercase: e.target.checked,
-                          })
-                        }
-                      />
-                      <span className="text-sm text-gray-700">
-                        Lowercase (a-z)
-                      </span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        checked={passwordSettings.numbers}
-                        onChange={(e) =>
-                          setPasswordSettings({
-                            ...passwordSettings,
-                            numbers: e.target.checked,
-                          })
-                        }
-                      />
-                      <span className="text-sm text-gray-700">
-                        Numbers (0-9)
-                      </span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        checked={passwordSettings.symbols}
-                        onChange={(e) =>
-                          setPasswordSettings({
-                            ...passwordSettings,
-                            symbols: e.target.checked,
-                          })
-                        }
-                      />
-                      <span className="text-sm text-gray-700">
-                        Symbols (!@#$%^&*)
-                      </span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-gray-300">
-                  <button
-                    type="button"
-                    onClick={generatePassword}
-                    className="w-full px-4 py-2 bg-primary-100 hover:bg-primary-200 text-primary-700 border border-primary-300 rounded-lg transition duration-200 flex items-center justify-center gap-2"
-                  >
-                    <ShuffleIcon size={20} weight="duotone" />
-                    Generate Password
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="flex justify-between mt-6">

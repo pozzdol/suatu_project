@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\RoleController;
@@ -63,5 +64,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/general/setup/users', [UserController::class, 'destroy']);
 
     // Organization Routes
+    Route::get('/general/setup/organizations/list', [OrganizationController::class, 'index']);
     Route::post('/general/setup/organizations', [OrganizationController::class, 'create']);
+
+    Route::get('/general/setup/organizations/edit/{id}', [OrganizationController::class, 'show']);
+    Route::put('/general/setup/organizations/edit/{id}', [OrganizationController::class, 'update']);
+
+    Route::post('/general/setup/organizations/mass-delete', [OrganizationController::class, 'massDestroy']);
+    Route::delete('/general/setup/organizations/{id}', [OrganizationController::class, 'destroy']);
+    Route::delete('/general/setup/organizations', [OrganizationController::class, 'destroy']);
+
+    // Department Routes
+    Route::get('/general/setup/departments/list', [DepartmentController::class, 'index']);
+    Route::get('/general/setup/departments/organization/{organizationId}', [DepartmentController::class, 'showByOrganization']);
+    Route::post('/general/setup/departments', [DepartmentController::class, 'create']);
+
+    Route::get('/general/setup/departments/edit/{id}', [DepartmentController::class, 'show']);
+    Route::put('/general/setup/departments/edit/{id}', [DepartmentController::class, 'update']);
+
+    Route::post('/general/setup/departments/mass-delete', [DepartmentController::class, 'massDestroy']);
+    Route::delete('/general/setup/departments/{id}', [DepartmentController::class, 'destroy']);
+    Route::delete('/general/setup/departments', [DepartmentController::class, 'destroy']);
 });

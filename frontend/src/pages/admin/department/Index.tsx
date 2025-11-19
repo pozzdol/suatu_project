@@ -15,9 +15,9 @@ import useDocumentTitle from "@/hooks/useDocumentTitle";
 type WindowData = Record<string, unknown> & {
   id: string;
   name: string;
-  url: string;
-  data_isParent: boolean;
-  access: string;
+  description: string;
+  organization: string;
+  organization_name: string;
 };
 
 interface TableHeader {
@@ -91,15 +91,15 @@ export default function AdminDepartmentIndexPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await requestApi.get("/general/setup/users/list");
+      const response = await requestApi.get("/general/setup/departments/list");
       if (response && response.data.success) {
-        setData(response.data.data.users);
+        setData(response.data.data.departments);
       } else {
-        toast.error("Failed to fetch user data");
+        toast.error("Failed to fetch department data");
       }
     } catch (error) {
-      console.error("Failed to fetch user data:", error);
-      toast.error("Failed to fetch user data");
+      console.error("Failed to fetch department data:", error);
+      toast.error("Failed to fetch department data");
     } finally {
       setLoading(false);
     }
@@ -145,8 +145,13 @@ export default function AdminDepartmentIndexPage() {
     setDeleting(true);
 
     try {
+      console.log(
+        JSON.stringify({
+          ids: pendingDeleteIds,
+        })
+      );
       const response = await requestApi.post(
-        "/general/setup/users/mass-delete",
+        "/general/setup/departments/mass-delete",
         {
           ids: pendingDeleteIds,
         }
@@ -154,13 +159,21 @@ export default function AdminDepartmentIndexPage() {
       // console.log(response);
 
       if (response.data.success) {
-        toast.success(
-          `Successfully deleted ${pendingDeleteIds.length} record(s)`
-        );
-        setSelectedRows([]); // Clear selection
+        if (response.data.data.not_found.length > 0) {
+          toast.error(
+            `${response.data.data.not_found.length} record(s) not found and could not be deleted`
+          );
+
+          console.error(response.data.message);
+        } else {
+          toast.success(
+            `Successfully deleted ${pendingDeleteIds.length} record(s)`
+          );
+          setSelectedRows([]); // Clear selection
+          setPendingDeleteIds([]);
+        }
         fetchData(); // Refresh data
         setDeleteModalVisible(false);
-        setPendingDeleteIds([]);
       } else {
         toast.error(response.data.message || "Failed to delete records");
       }
@@ -186,12 +199,12 @@ export default function AdminDepartmentIndexPage() {
     if (!data) return [];
 
     const uniqueIsParent = Array.from(
-      new Set(data.map((item) => item.data_isParent))
+      new Set(data.map((item) => item.organization_name))
     )
       .sort()
       .map((item) => ({
         value: String(item),
-        label: item ? "Yes" : "No",
+        label: String(item),
       }));
 
     return [...uniqueIsParent];
@@ -223,38 +236,8 @@ export default function AdminDepartmentIndexPage() {
         exportable: true,
       },
       {
-        label: "Email",
-        field: "email",
-        type: "text" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-      },
-      {
-        label: "Role",
-        field: "role_name",
-        type: "text" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-      },
-      {
-        label: "Employee ID",
-        field: "employee_id",
-        type: "text" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-      },
-      {
-        label: "Department",
-        field: "department_id",
+        label: "Description",
+        field: "description",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -264,8 +247,9 @@ export default function AdminDepartmentIndexPage() {
       },
       {
         label: "Organization",
-        field: "organization_id",
-        type: "text" as HeaderType,
+        field: "organization_name",
+        type: "dynamicSelect" as HeaderType,
+        options: getUniqueIsParent(data || []),
         isNumeric: false,
         isMultiSelect: false,
         allowTextInput: false,
@@ -460,16 +444,7 @@ export default function AdminDepartmentIndexPage() {
                 {row.name}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.email}
-              </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.role_name}
-              </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.employee_id}
-              </td>
-              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.department_name}
+                {row.description}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
                 {row.organization_name}
@@ -538,7 +513,7 @@ export default function AdminDepartmentIndexPage() {
           </p>
           <div className="bg-red-50 border border-red-200 rounded-xl p-4">
             <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center shrink-0 mt-0.5">
                 <span className="text-red-600 text-sm font-bold">!</span>
               </div>
               <div>

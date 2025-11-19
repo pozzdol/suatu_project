@@ -1,6 +1,8 @@
 import {
   AppWindowIcon,
   BriefcaseIcon,
+  BuildingApartmentIcon,
+  BuildingIcon,
   GearIcon,
   HouseIcon,
   KeyIcon,
@@ -32,6 +34,8 @@ export function IconRenderer({
     UserCircleGear: UserCircleGearIcon,
     Wrench: WrenchIcon,
     Key: KeyIcon,
+    Building: BuildingIcon,
+    BuildingApartment: BuildingApartmentIcon,
   };
 
   const Icon = iconMap[name] || AppWindowIcon; // Default ke AppWindowIcon jika tidak ditemukan
