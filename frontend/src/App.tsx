@@ -6,6 +6,9 @@ import Layout from "./components/layout/Layout";
 import SetupRoutes from "./routes/SetupRoutes";
 import { ConfigProvider } from "antd";
 import NotFound from "./components/NotFound";
+import ProductIndexPage from "./pages/application/product/Index";
+import RawMaterialIndexPage from "./pages/application/raw-material/Index";
+import OrdersRoutes from "./routes/OrdersRoutes";
 
 function App() {
   return (
@@ -32,6 +35,24 @@ function App() {
             }
           />
           <Route path="/general-setup/*" element={<SetupRoutes />} />
+          <Route
+            path="/raw-material"
+            element={
+              <Layout isActive={"/raw-material"}>
+                <RawMaterialIndexPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/product"
+            element={
+              <Layout isActive={"/product"}>
+                <ProductIndexPage />
+              </Layout>
+            }
+          />
+
+          <Route path="/orders/*" element={<OrdersRoutes />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

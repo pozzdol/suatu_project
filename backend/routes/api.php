@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PermitController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\RawMaterialController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoleWindowController;
 use App\Http\Controllers\UserController;
@@ -85,4 +88,37 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/general/setup/departments/mass-delete', [DepartmentController::class, 'massDestroy']);
     Route::delete('/general/setup/departments/{id}', [DepartmentController::class, 'destroy']);
     Route::delete('/general/setup/departments', [DepartmentController::class, 'destroy']);
+
+    // Raw Material Routes
+    Route::get('/general/setup/raw-materials/list', [RawMaterialController::class, 'index']);
+    Route::post('/general/setup/raw-materials', [RawMaterialController::class, 'create']);
+
+    Route::get('/general/setup/raw-materials/edit/{id}', [RawMaterialController::class, 'show']);
+    Route::put('/general/setup/raw-materials/edit/{id}', [RawMaterialController::class, 'update']);
+
+    Route::post('/general/setup/raw-materials/mass-delete', [RawMaterialController::class, 'massDestroy']);
+    Route::delete('/general/setup/raw-materials/{id}', [RawMaterialController::class, 'destroy']);
+    Route::delete('/general/setup/raw-materials', [RawMaterialController::class, 'destroy']);
+
+    // Product Routes
+    Route::get('/general/setup/products/list', [ProductController::class, 'index']);
+    Route::post('/general/setup/products', [ProductController::class, 'create']);
+
+    Route::get('/general/setup/products/edit/{id}', [ProductController::class, 'show']);
+    Route::put('/general/setup/products/edit/{id}', [ProductController::class, 'update']);
+
+    Route::post('/general/setup/products/mass-delete', [ProductController::class, 'massDestroy']);
+    Route::delete('/general/setup/products/{id}', [ProductController::class, 'destroy']);
+    Route::delete('/general/setup/products', [ProductController::class, 'destroy']);
+
+    // Order Routes
+    Route::get('/transactions/orders/list', [OrdersController::class, 'index']);
+    Route::post('/transactions/orders', [OrdersController::class, 'create']);
+
+    Route::get('/transactions/orders/edit/{id}', [OrdersController::class, 'show']);
+    Route::put('/transactions/orders/edit/{id}', [OrdersController::class, 'update']);
+
+    Route::post('/transactions/orders/mass-delete', [OrdersController::class, 'massDestroy']);
+    Route::delete('/transactions/orders/{id}', [OrdersController::class, 'destroy']);
+    Route::delete('/transactions/orders', [OrdersController::class, 'destroy']);
 });
