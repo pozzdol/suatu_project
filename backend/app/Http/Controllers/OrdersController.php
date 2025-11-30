@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\RawMaterial;
 use App\Models\RawMaterialUsage;
+use App\Models\WorkOrder;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,7 @@ class OrdersController extends Controller
     public function index()
     {
         try {
-            $orders = Order::with('orderItems.product')
+            $orders = Order::with(['orderItems.product', 'workOrder'])
                 ->whereNull('deleted_at')
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -43,6 +44,7 @@ class OrdersController extends Controller
                             'quantity' => $item->quantity,
                         ];
                     }),
+                    'workOrder' => $this->transformWorkOrder($order->workOrder),
                 ];
             });
 
@@ -72,12 +74,17 @@ class OrdersController extends Controller
         try {
             $validated = $validator->validated();
 
+            $workOrderDescription = $request->input('work_order_description');
+            if ($workOrderDescription === null) {
+                $workOrderDescription = $request->input('workOrderDescription');
+            }
+
             $order = new Order;
             $order->name = $validated['name'];
             $order->email = $validated['email'];
             $order->phone = $validated['phone'] ?? null;
             $order->address = $validated['address'] ?? null;
-            $order->status = 'draft'; // Default status saat create
+            $order->status = 'draft';
             $order->save();
 
             $payload = [
@@ -91,6 +98,7 @@ class OrdersController extends Controller
                 'created_at' => $order->created_at,
                 'updated_at' => $order->updated_at,
                 'orderItems' => [],
+                'workOrder' => $this->transformWorkOrder($order->workOrder),
             ];
 
             return $this->apiResponse(['order' => $payload], 'Order created successfully.', true, 201);
@@ -104,7 +112,7 @@ class OrdersController extends Controller
     public function show($id)
     {
         try {
-            $order = Order::with('orderItems.product')->find($id);
+            $order = Order::with(['orderItems.product', 'workOrder'])->find($id);
 
             if (! $order) {
                 return $this->apiError('Order not found.', null, 404);
@@ -128,6 +136,7 @@ class OrdersController extends Controller
                         'quantity' => $item->quantity,
                     ];
                 }),
+                'workOrder' => $this->transformWorkOrder($order->workOrder),
             ];
 
             return $this->apiResponse(['order' => $payload], 'Order retrieved successfully.');
@@ -143,7 +152,7 @@ class OrdersController extends Controller
         DB::beginTransaction();
 
         try {
-            $order = Order::with('orderItems')->find($id);
+            $order = Order::with(['orderItems', 'workOrder'])->find($id);
 
             if (! $order) {
                 return $this->apiError('Order not found.', null, 404);
@@ -168,7 +177,22 @@ class OrdersController extends Controller
 
             $validated = $validator->validated();
 
-            // Update order fields
+            $workOrderDescription = $request->input('work_order_description');
+            if ($workOrderDescription === null) {
+                $workOrderDescription = $request->input('workOrderDescription');
+            }
+
+            $originalStatus = $order->status;
+            $targetStatus = $originalStatus;
+
+            if (array_key_exists('status', $validated)) {
+                $targetStatus = $validated['status'];
+            }
+
+            if ($originalStatus === 'confirm') {
+                $this->revertRawMaterialUsage($order);
+            }
+
             if (isset($validated['name'])) {
                 $order->name = $validated['name'];
             }
@@ -182,33 +206,27 @@ class OrdersController extends Controller
                 $order->address = $validated['address'];
             }
 
-            // Update order items if provided (SEBELUM cek status confirm)
             if (isset($validated['orderItems'])) {
                 $newProductIds = collect($validated['orderItems'])->pluck('productId')->toArray();
 
-                // Force delete order items yang tidak ada di request baru (termasuk soft deleted)
                 OrderItem::withTrashed()
                     ->where('order_id', $order->id)
                     ->whereNotIn('product_id', $newProductIds)
                     ->forceDelete();
 
-                // Update atau create order items
                 foreach ($validated['orderItems'] as $item) {
-                    // Cek apakah ada record (termasuk soft deleted)
                     $existingItem = OrderItem::withTrashed()
                         ->where('order_id', $order->id)
                         ->where('product_id', $item['productId'])
                         ->first();
 
                     if ($existingItem) {
-                        // Jika ada (termasuk soft deleted), restore dan update
                         if ($existingItem->trashed()) {
                             $existingItem->restore();
                         }
                         $existingItem->quantity = $item['quantity'];
                         $existingItem->save();
                     } else {
-                        // Jika tidak ada, create baru
                         $orderItem = new OrderItem;
                         $orderItem->order_id = $order->id;
                         $orderItem->product_id = $item['productId'];
@@ -217,52 +235,46 @@ class OrdersController extends Controller
                     }
                 }
 
-                // Reload order items setelah update
                 $order->load('orderItems.product');
             }
 
-            // Cek status SETELAH order items diupdate
-            if (isset($validated['status'])) {
-                // Jika status berubah ke 'confirm', cek ketersediaan raw material
-                if ($validated['status'] === 'confirm' && $order->status !== 'confirm') {
-                    // Pastikan order items sudah di-load
-                    if (! $order->relationLoaded('orderItems')) {
-                        $order->load('orderItems.product');
-                    }
+            if ($targetStatus === 'confirm') {
+                $order->load('orderItems.product');
 
-                    // Cek apakah ada order items
-                    if ($order->orderItems->isEmpty()) {
-                        DB::rollBack();
+                if ($order->orderItems->isEmpty()) {
+                    DB::rollBack();
 
-                        return $this->apiError(
-                            'Cannot confirm order without order items.',
-                            null,
-                            422
-                        );
-                    }
-
-                    $availabilityCheck = $this->checkRawMaterialAvailability($order);
-
-                    if (! $availabilityCheck['available']) {
-                        DB::rollBack();
-
-                        return $this->apiError(
-                            'Raw material tidak tersedia.',
-                            ['insufficient_materials' => $availabilityCheck['insufficient']],
-                            422
-                        );
-                    }
-
-                    // Kurangi stock raw material dan catat history
-                    $this->processRawMaterialUsage($order);
+                    return $this->apiError(
+                        'Cannot confirm order without order items.',
+                        null,
+                        422
+                    );
                 }
 
-                $order->status = $validated['status'];
+                $availabilityCheck = $this->checkRawMaterialAvailability($order);
+
+                if (! $availabilityCheck['available']) {
+                    DB::rollBack();
+
+                    return $this->apiError(
+                        'Raw material tidak tersedia.',
+                        ['insufficient_materials' => $availabilityCheck['insufficient']],
+                        422
+                    );
+                }
+
+                $this->processRawMaterialUsage($order);
+                $this->createOrRestoreWorkOrder($order, $workOrderDescription);
             }
+
+            if ($targetStatus !== 'confirm' && $originalStatus === 'confirm') {
+                $this->softDeleteWorkOrder($order);
+            }
+
+            $order->status = $targetStatus;
             $order->save();
 
-            // Reload with relations untuk response
-            $order->load('orderItems.product');
+            $order->load(['orderItems.product', 'workOrder']);
 
             $payload = [
                 'id' => $order->id,
@@ -282,6 +294,7 @@ class OrdersController extends Controller
                         'quantity' => $item->quantity,
                     ];
                 }),
+                'workOrder' => $this->transformWorkOrder($order->workOrder),
             ];
 
             DB::commit();
@@ -301,8 +314,9 @@ class OrdersController extends Controller
      */
     public function destroy(Request $request, $id = null)
     {
+        DB::beginTransaction();
+
         try {
-            // Prioritaskan ID dari URL, fallback ke body
             $orderId = $id ?? $request->input('id');
 
             if (! $orderId) {
@@ -315,10 +329,16 @@ class OrdersController extends Controller
                 return $this->apiError('Order not found.', null, 404);
             }
 
+            $this->revertRawMaterialUsage($order);
+            $this->softDeleteWorkOrder($order);
+
             $order->delete();
+
+            DB::commit();
 
             return $this->apiResponse(null, 'Order deleted successfully.');
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Order deletion error: '.$e->getMessage());
 
             return $this->apiError('Failed to delete order.', null, 500);
@@ -336,6 +356,8 @@ class OrdersController extends Controller
             'ids.*' => 'required|string',
         ])->validate();
 
+        DB::beginTransaction();
+
         try {
             $deletedCount = 0;
             $notFoundIds = [];
@@ -344,6 +366,8 @@ class OrdersController extends Controller
                 $order = Order::find($orderId);
 
                 if ($order) {
+                    $this->revertRawMaterialUsage($order);
+                    $this->softDeleteWorkOrder($order);
                     $order->delete();
                     $deletedCount++;
                 } else {
@@ -356,14 +380,95 @@ class OrdersController extends Controller
                 $message .= ' Not found: '.implode(', ', $notFoundIds);
             }
 
+            DB::commit();
+
             return $this->apiResponse([
                 'deleted_count' => $deletedCount,
                 'not_found' => $notFoundIds,
             ], $message);
         } catch (\Exception $e) {
+            DB::rollBack();
             Log::error('Mass order deletion error: '.$e->getMessage());
 
             return $this->apiError('Failed to delete orders.', null, 500);
+        }
+    }
+
+    /**
+     * Format work order payload for API responses.
+     */
+    private function transformWorkOrder(?WorkOrder $workOrder): ?array
+    {
+        if (! $workOrder) {
+            return null;
+        }
+
+        return [
+            'id' => $workOrder->id,
+            'orderId' => $workOrder->order_id,
+            'noSurat' => $workOrder->no_surat,
+            'description' => $workOrder->description,
+            'status' => $workOrder->status,
+            'deleted' => $workOrder->deleted,
+            'deleted_at' => $workOrder->deleted_at,
+            'created_at' => $workOrder->created_at,
+            'updated_at' => $workOrder->updated_at,
+        ];
+    }
+
+    /**
+     * Ensure a work order exists (or is restored) when order has been confirmed.
+     */
+    private function createOrRestoreWorkOrder(Order $order, ?string $description = null): void
+    {
+        $relation = $order->workOrder();
+        $existing = $relation->withTrashed()->first();
+
+        if ($existing) {
+            if ($existing->trashed()) {
+                $existing->restore();
+            }
+
+            if ($description !== null) {
+                $existing->description = $description;
+            }
+
+            if ($existing->status === null) {
+                $existing->status = 'pending';
+            }
+
+            $existing->save();
+            $order->setRelation('workOrder', $existing);
+
+            return;
+        }
+
+        $workOrder = WorkOrder::create([
+            'order_id' => $order->id,
+            'description' => $description,
+            'status' => 'pending',
+        ]);
+
+        $order->setRelation('workOrder', $workOrder);
+    }
+
+    /**
+     * Soft delete the related work order when order is reverted or deleted.
+     */
+    private function softDeleteWorkOrder(Order $order): void
+    {
+        $workOrder = $order->workOrder;
+
+        if (! $workOrder) {
+            $workOrder = $order->workOrder()->withTrashed()->first();
+        }
+
+        if ($workOrder && ! $workOrder->trashed()) {
+            $workOrder->delete();
+        }
+
+        if ($workOrder && $workOrder->trashed()) {
+            $order->setRelation('workOrder', null);
         }
     }
 
@@ -374,7 +479,6 @@ class OrdersController extends Controller
     {
         $order->load('orderItems.product');
 
-        // Hitung total kebutuhan raw material
         $requiredMaterials = [];
 
         foreach ($order->orderItems as $orderItem) {
@@ -392,7 +496,6 @@ class OrdersController extends Controller
             }
         }
 
-        // Cek ketersediaan
         $insufficient = [];
         $available = true;
 
@@ -434,6 +537,28 @@ class OrdersController extends Controller
     }
 
     /**
+     * Mengembalikan stok raw material dan menghapus catatan penggunaan order.
+     */
+    private function revertRawMaterialUsage(Order $order): void
+    {
+        $usages = RawMaterialUsage::where('order_id', $order->id)->get();
+
+        foreach ($usages as $usage) {
+            $rawMaterial = RawMaterial::find($usage->raw_material_id);
+
+            if ($rawMaterial) {
+                $data = $rawMaterial->data ?? [];
+                $currentStock = $data['stock'] ?? 0;
+                $data['stock'] = $currentStock + (float) $usage->quantity_used;
+                $rawMaterial->data = $data;
+                $rawMaterial->save();
+            }
+
+            $usage->forceDelete();
+        }
+    }
+
+    /**
      * Proses penggunaan raw material: kurangi stock dan catat history
      */
     private function processRawMaterialUsage(Order $order): void
@@ -448,7 +573,6 @@ class OrdersController extends Controller
                 $rawMaterialId = $ingredient['rawMaterialId'];
                 $quantityUsed = $ingredient['quantity'] * $orderItem->quantity;
 
-                // Kurangi stock raw material
                 $rawMaterial = RawMaterial::find($rawMaterialId);
                 if ($rawMaterial) {
                     $data = $rawMaterial->data ?? [];
@@ -457,7 +581,6 @@ class OrdersController extends Controller
                     $rawMaterial->data = $data;
                     $rawMaterial->save();
 
-                    // Catat history penggunaan
                     RawMaterialUsage::create([
                         'order_id' => $order->id,
                         'order_item_id' => $orderItem->id,

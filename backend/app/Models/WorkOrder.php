@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
-class Order extends Model
+class WorkOrder extends Model
 {
     use HasFactory;
     use SoftDeletes;
 
-    protected $table = 'orders';
+    protected $table = 'work_orders';
 
     protected $primaryKey = 'id';
 
@@ -25,10 +25,9 @@ class Order extends Model
 
     protected $fillable = [
         'id',
-        'name',
-        'email',
-        'phone',
-        'address',
+        'order_id',
+        'no_surat',
+        'description',
         'status',
         'deleted',
     ];
@@ -46,24 +45,27 @@ class Order extends Model
             if (empty($model->id)) {
                 $model->id = (string) Str::uuid();
             }
+
+            if (empty($model->no_surat)) {
+                $model->no_surat = static::generateNoSurat();
+            }
         });
     }
 
-    // RELATIONS
-    public function orderItems()
+    public static function generateNoSurat(): string
     {
-        return $this->hasMany(OrderItem::class, 'order_id', 'id');
+        $prefix = 'WO-'.now()->format('Ymd');
+
+        $sequence = static::withTrashed()
+            ->where('no_surat', 'like', $prefix.'%')
+            ->count() + 1;
+
+        return sprintf('%s-%04d', $prefix, $sequence);
     }
 
-    public function products()
+    public function order()
     {
-        return $this->belongsToMany(Product::class, 'order_items', 'order_id', 'product_id')
-            ->withPivot(['id', 'quantity']);
-    }
-
-    public function workOrder()
-    {
-        return $this->hasOne(WorkOrder::class, 'order_id', 'id');
+        return $this->belongsTo(Order::class, 'order_id', 'id');
     }
 
     protected function runSoftDelete()

@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('windows')) {
+            return;
+        }
+
         Schema::create('windows', function (Blueprint $table) {
             $table->string('id', 36)->primary();
             $table->json('data')->nullable();
