@@ -11,6 +11,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoleWindowController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WindowsController;
+use App\Http\Controllers\WorkOrderController;
 use Illuminate\Support\Facades\Route;
 
 // Routes tanpa autentikasi
@@ -121,4 +122,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/transactions/orders/mass-delete', [OrdersController::class, 'massDestroy']);
     Route::delete('/transactions/orders/{id}', [OrdersController::class, 'destroy']);
     Route::delete('/transactions/orders', [OrdersController::class, 'destroy']);
+
+    // Work Order Routes
+    Route::get('/transactions/work-orders/list', [WorkOrderController::class, 'index']);
+
+    Route::get('/transactions/work-orders/edit/{id}', [WorkOrderController::class, 'show']);
+    Route::put('/transactions/work-orders/edit/{id}', [WorkOrderController::class, 'update']);
+    Route::put('/transactions/work-orders/status/{id}', [WorkOrderController::class, 'updateStatus']);
+
+    Route::post('/transactions/work-orders/mass-delete', [WorkOrderController::class, 'massDestroy']);
+    Route::delete('/transactions/work-orders/{id}', [WorkOrderController::class, 'destroy']);
+    Route::delete('/transactions/work-orders', [WorkOrderController::class, 'destroy']);
 });

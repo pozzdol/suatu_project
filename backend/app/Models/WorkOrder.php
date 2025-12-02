@@ -54,13 +54,24 @@ class WorkOrder extends Model
 
     public static function generateNoSurat(): string
     {
-        $prefix = 'WO-'.now()->format('Ymd');
+        $now = now();
+        $monthNum = (int) $now->format('m');
+        $year = $now->format('Y');
+
+        $romanMonths = [
+            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V',
+            6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X',
+            11 => 'XI', 12 => 'XII',
+        ];
+
+        $monthRoman = $romanMonths[$monthNum];
+        $prefix = $monthRoman.'/'.$year;
 
         $sequence = static::withTrashed()
-            ->where('no_surat', 'like', $prefix.'%')
+            ->where('no_surat', 'like', '%/'.$prefix)
             ->count() + 1;
 
-        return sprintf('%s-%04d', $prefix, $sequence);
+        return sprintf('%03d/SPK/%s/%s', $sequence, $monthRoman, $year);
     }
 
     public function order()

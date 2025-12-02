@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Throwable;
 
 return new class extends Migration
 {
@@ -61,7 +60,7 @@ return new class extends Migration
                 Schema::table('work_orders', function (Blueprint $table) {
                     $table->unique('no_surat');
                 });
-            } catch (Throwable $e) {
+            } catch (\Exception $e) {
                 // index already exists
             }
         }
@@ -71,7 +70,7 @@ return new class extends Migration
                 Schema::table('work_orders', function (Blueprint $table) {
                     $table->index('order_id');
                 });
-            } catch (Throwable $e) {
+            } catch (\Exception $e) {
                 // index already exists
             }
 
@@ -84,7 +83,7 @@ return new class extends Migration
                         ->cascadeOnUpdate()
                         ->cascadeOnDelete();
                 });
-            } catch (Throwable $e) {
+            } catch (\Exception $e) {
                 // foreign key already exists
             }
         }

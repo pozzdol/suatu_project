@@ -1,5 +1,7 @@
 import Layout from "@/components/layout/Layout";
+import NotFound from "@/components/NotFound";
 import SPKIndexPage from "@/pages/application/spk/Index";
+import SPKShowPage from "@/pages/application/spk/Show";
 import { Route, Routes } from "react-router-dom";
 
 function SPKRoutes() {
@@ -13,6 +15,17 @@ function SPKRoutes() {
           </Layout>
         }
       />
+
+      <Route
+        path="/:id"
+        element={
+          <Layout isActive="/spk">
+            <SPKShowPage />
+          </Layout>
+        }
+      />
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }

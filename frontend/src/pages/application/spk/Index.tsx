@@ -18,7 +18,7 @@ type WorkOrder = {
   id: string;
   orderCode: string;
   customerName: string;
-  requestedBy: string;
+  customerEmail: string;
   confirmedAt?: string | null;
   status?: string;
   items: WorkOrderItem[];
@@ -78,14 +78,14 @@ function SPKIndexPage() {
   const fetchWorkOrders = async () => {
     setLoadingOrders(true);
     try {
-      const response = await requestApi.get("/transactions/orders/list");
+      const response = await requestApi.get("/transactions/work-orders/list");
       if (response && response.data.success) {
         const mappedOrders: WorkOrder[] =
-          response.data.data.orders?.map((order: any) => ({
+          response.data.data.workOrders?.map((order: any) => ({
             id: order.id,
-            orderCode: order.id || "-",
-            customerName: order.name || "Unknown Customer",
-            requestedBy: order.email || "Unknown User",
+            orderCode: order.noSurat || "-",
+            customerName: order.orderName || "Unknown Customer",
+            customerEmail: order.orderEmail || "Unknown User",
             confirmedAt: order.updated_at || null,
             status: order.status || "pending",
             items:
@@ -142,27 +142,22 @@ function SPKIndexPage() {
         bg: "bg-gray-100",
         text: "text-gray-700",
       },
-      pending: {
+      Pending: {
         label: "Pending",
         bg: "bg-yellow-100",
         text: "text-yellow-700",
       },
-      processing: {
+      "On Progress": {
         label: "Processing",
         bg: "bg-blue-100",
         text: "text-blue-700",
       },
-      confirmed: {
-        label: "Confirmed",
-        bg: "bg-green-100",
-        text: "text-green-700",
-      },
-      completed: {
+      Completed: {
         label: "Completed",
         bg: "bg-emerald-100",
         text: "text-emerald-700",
       },
-      cancelled: {
+      Cancelled: {
         label: "Cancelled",
         bg: "bg-red-100",
         text: "text-red-700",
@@ -203,6 +198,13 @@ function SPKIndexPage() {
     const routeSuffix = format === "pdf" ? "download-pdf" : "download-excel";
     const url = `/transactions/work-orders/${id}/${routeSuffix}`;
     window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const status = {
+    pending: "Pending",
+    in_progress: "On Progress",
+    completed: "Completed",
+    cancelled: "Cancelled",
   };
   // FUNCTIONS END
 
@@ -276,7 +278,7 @@ function SPKIndexPage() {
                       {order.orderCode}
                     </h2>
                   </div>
-                  {getStatusBadge(order.status)}
+                  {getStatusBadge(status[order.status])}
                 </div>
 
                 <div className="mt-5 space-y-4">
@@ -294,7 +296,7 @@ function SPKIndexPage() {
                         Email
                       </p>
                       <p className="text-sm text-gray-700 mt-1">
-                        {order.requestedBy || "-"}
+                        {order.customerEmail || "-"}
                       </p>
                     </div>
                     <div>
