@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DeliveryOrderController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\FinishedGoodsController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PermitController;
@@ -133,4 +135,30 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/transactions/work-orders/mass-delete', [WorkOrderController::class, 'massDestroy']);
     Route::delete('/transactions/work-orders/{id}', [WorkOrderController::class, 'destroy']);
     Route::delete('/transactions/work-orders', [WorkOrderController::class, 'destroy']);
+
+    // Finished Goods Routes
+    Route::get('/transactions/finished-goods/list', [FinishedGoodsController::class, 'index']);
+    Route::get('/transactions/finished-goods/work-order/{workOrderId}', [FinishedGoodsController::class, 'byWorkOrder']);
+    Route::post('/transactions/finished-goods', [FinishedGoodsController::class, 'create']);
+
+    Route::get('/transactions/finished-goods/edit/{id}', [FinishedGoodsController::class, 'show']);
+    Route::put('/transactions/finished-goods/edit/{id}', [FinishedGoodsController::class, 'update']);
+
+    Route::post('/transactions/finished-goods/mass-delete', [FinishedGoodsController::class, 'massDestroy']);
+    Route::delete('/transactions/finished-goods/{id}', [FinishedGoodsController::class, 'destroy']);
+    Route::delete('/transactions/finished-goods', [FinishedGoodsController::class, 'destroy']);
+
+    // Delivery Order Routes
+    Route::get('/transactions/delivery-orders/list', [DeliveryOrderController::class, 'index']);
+    Route::get('/transactions/delivery-orders/order/{orderId}', [DeliveryOrderController::class, 'byOrder']);
+    Route::post('/transactions/delivery-orders', [DeliveryOrderController::class, 'create']);
+
+    Route::get('/transactions/delivery-orders/edit/{id}', [DeliveryOrderController::class, 'show']);
+    Route::put('/transactions/delivery-orders/edit/{id}', [DeliveryOrderController::class, 'update']);
+    Route::put('/transactions/delivery-orders/status/{id}', [DeliveryOrderController::class, 'updateStatus']);
+    Route::put('/transactions/delivery-orders/delivered/{id}', [DeliveryOrderController::class, 'markDelivered']);
+
+    Route::post('/transactions/delivery-orders/mass-delete', [DeliveryOrderController::class, 'massDestroy']);
+    Route::delete('/transactions/delivery-orders/{id}', [DeliveryOrderController::class, 'destroy']);
+    Route::delete('/transactions/delivery-orders', [DeliveryOrderController::class, 'destroy']);
 });

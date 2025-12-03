@@ -24,7 +24,7 @@ type WorkOrder = {
   items: WorkOrderItem[];
 };
 
-function SPKIndexPage() {
+function DeliveryOrderPage() {
   // PAGE LOAD
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -42,7 +42,7 @@ function SPKIndexPage() {
       try {
         setLoading(true);
         const pageData = await validatePermit(
-          "5e3d9b8f13ed4d9fb5ffd9cf597fecc7"
+          "febc90cc433e4b53bfae95802c945270"
         );
 
         if (pageData && pageData.success && pageData.data.permit.permission) {
@@ -334,18 +334,10 @@ function SPKIndexPage() {
                   <button
                     type="button"
                     className="inline-flex cursor-pointer items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-full transition-all duration-200"
-                    onClick={() => handleDetailWorkOrder(order.id)}
-                  >
-                    <InfoIcon weight="duotone" className="w-4 h-4" />
-                    Detail
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex cursor-pointer items-center gap-2 px-4 py-2 bg-white text-sm font-medium rounded-full border border-gray-200 text-gray-700 hover:border-sky-200 hover:text-sky-600 transition-all duration-200"
                     onClick={() => handleViewWorkOrder(order.id)}
                   >
                     <EyeIcon weight="duotone" className="w-4 h-4" />
-                    SPK & Download
+                    Detail & Download
                   </button>
                 </div>
               </div>
@@ -357,4 +349,4 @@ function SPKIndexPage() {
   );
 }
 
-export default SPKIndexPage;
+export default DeliveryOrderPage;

@@ -1,5 +1,6 @@
 import Layout from "@/components/layout/Layout";
 import NotFound from "@/components/NotFound";
+import DetailSpkPage from "@/pages/application/spk/Detail";
 import SPKIndexPage from "@/pages/application/spk/Index";
 import SPKShowPage from "@/pages/application/spk/Show";
 import { Route, Routes } from "react-router-dom";
@@ -21,6 +22,15 @@ function SPKRoutes() {
         element={
           <Layout isActive="/spk">
             <SPKShowPage />
+          </Layout>
+        }
+      />
+
+      <Route
+        path="/detail/:id"
+        element={
+          <Layout isActive="/spk">
+            <DetailSpkPage />
           </Layout>
         }
       />

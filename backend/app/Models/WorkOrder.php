@@ -79,6 +79,11 @@ class WorkOrder extends Model
         return $this->belongsTo(Order::class, 'order_id', 'id');
     }
 
+    public function finishedGoods()
+    {
+        return $this->hasMany(FinishedGood::class, 'work_order_id', 'id');
+    }
+
     protected function runSoftDelete()
     {
         $query = $this->newQueryWithoutScopes()->where($this->getKeyName(), $this->getKey());

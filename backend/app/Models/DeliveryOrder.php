@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
-class Order extends Model
+class DeliveryOrder extends Model
 {
     use HasFactory;
     use SoftDeletes;
 
-    protected $table = 'orders';
+    protected $table = 'delivery_orders';
 
     protected $primaryKey = 'id';
 
@@ -25,12 +25,12 @@ class Order extends Model
 
     protected $fillable = [
         'id',
-        'name',
-        'email',
-        'phone',
-        'address',
-        'delivery_address',
+        'order_id',
+        'no_surat',
+        'description',
         'status',
+        'shipped_at',
+        'delivered_at',
         'deleted',
     ];
 
@@ -39,6 +39,8 @@ class Order extends Model
         'deleted_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'shipped_at' => 'datetime',
+        'delivered_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -47,29 +49,44 @@ class Order extends Model
             if (empty($model->id)) {
                 $model->id = (string) Str::uuid();
             }
+
+            if (empty($model->no_surat)) {
+                $model->no_surat = static::generateNoSurat();
+            }
         });
     }
 
+    /**
+     * Generate no_surat dengan format: 001/SPB/XII/2025
+     * SPB = Surat Pengiriman Barang
+     */
+    public static function generateNoSurat(): string
+    {
+        $now = now();
+        $monthNum = (int) $now->format('m');
+        $year = $now->format('Y');
+
+        $romanMonths = [
+            1 => 'I', 2 => 'II', 3 => 'III', 4 => 'IV', 5 => 'V',
+            6 => 'VI', 7 => 'VII', 8 => 'VIII', 9 => 'IX', 10 => 'X',
+            11 => 'XI', 12 => 'XII',
+        ];
+
+        $monthRoman = $romanMonths[$monthNum];
+        $prefix = $monthRoman.'/'.$year;
+
+        // Hitung urutan berdasarkan bulan dan tahun (termasuk yang soft deleted)
+        $sequence = static::withTrashed()
+            ->where('no_surat', 'like', '%/'.$prefix)
+            ->count() + 1;
+
+        return sprintf('%03d/SPB/%s/%s', $sequence, $monthRoman, $year);
+    }
+
     // RELATIONS
-    public function orderItems()
+    public function order()
     {
-        return $this->hasMany(OrderItem::class, 'order_id', 'id');
-    }
-
-    public function products()
-    {
-        return $this->belongsToMany(Product::class, 'order_items', 'order_id', 'product_id')
-            ->withPivot(['id', 'quantity']);
-    }
-
-    public function workOrder()
-    {
-        return $this->hasOne(WorkOrder::class, 'order_id', 'id');
-    }
-
-    public function deliveryOrder()
-    {
-        return $this->hasOne(DeliveryOrder::class, 'order_id', 'id');
+        return $this->belongsTo(Order::class, 'order_id', 'id');
     }
 
     protected function runSoftDelete()

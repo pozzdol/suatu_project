@@ -160,7 +160,7 @@ function SPKShowPage() {
 
   // --- FUNGSI UPDATE STATUS ---
   const handleUpdateStatus = async () => {
-    if (!isEditable && !isAdmin) {
+    if (!isEditable) {
       toast.error("You don't have permission to update status");
       return;
     }
@@ -181,7 +181,7 @@ function SPKShowPage() {
         toast.success("Status updated to On Progress");
         // Update local state
         setWorkOrder((prev) =>
-          prev ? { ...prev, status: "on progress" } : null
+          prev ? { ...prev, status: "in_progress" } : null
         );
       } else {
         toast.error(response?.data?.message || "Failed to update status");
@@ -189,6 +189,40 @@ function SPKShowPage() {
     } catch (error: any) {
       console.error("Failed to update status:", error);
       toast.error(error?.response?.data?.message || "Failed to update status");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  // --- FUNGSI REVERT STATUS KE PENDING ---
+  const handleRevertStatus = async () => {
+    if (!isEditable) {
+      toast.error("You don't have permission to update status");
+      return;
+    }
+
+    if (!id) {
+      toast.error("Work order ID not found");
+      return;
+    }
+
+    setUpdatingStatus(true);
+    try {
+      const response = await requestApi.put(
+        `/transactions/work-orders/status/${id}`,
+        { status: "pending" }
+      );
+
+      if (response && response.data.success) {
+        toast.success("Status reverted to Pending");
+        // Update local state
+        setWorkOrder((prev) => (prev ? { ...prev, status: "pending" } : null));
+      } else {
+        toast.error(response?.data?.message || "Failed to revert status");
+      }
+    } catch (error: any) {
+      console.error("Failed to revert status:", error);
+      toast.error(error?.response?.data?.message || "Failed to revert status");
     } finally {
       setUpdatingStatus(false);
     }
@@ -203,11 +237,6 @@ function SPKShowPage() {
 
   // --- FUNGSI DOWNLOAD PDF YANG DIPERBAIKI ---
   const handleDownload = async (format: "pdf" | "excel") => {
-    if (!isEditable && !isAdmin) {
-      toast.error("You don't have permission to download work orders");
-      return;
-    }
-
     if (!id) {
       toast.error("Work order ID not found");
       return;
@@ -517,6 +546,12 @@ function SPKShowPage() {
   return (
     <div className="pt-6 px-4 md:px-8 pb-14 min-h-[calc(100vh-64px)] bg-gray-50">
       {/* Tombol Back */}
+      <div className="text-gray-500 mb-2 grid grid-cols-1 gap-2 md:flex md:justify-between md:items-center">
+        <div>
+          <h1 className="text-3xl font-semibold">{title}</h1>
+          <p>{subTitle}</p>
+        </div>
+      </div>
       <div className="flex items-center space-x-2 mb-6 print:hidden">
         <button
           className="flex items-center text-sky-600 font-medium cursor-pointer hover:text-sky-700 transition duration-200 ease-in-out"
@@ -697,26 +732,42 @@ function SPKShowPage() {
       {/* Action Buttons */}
       <div className="flex justify-between gap-3 mt-6 print:hidden max-w-[1000px] mx-auto">
         {/* Left: Status Update Button */}
-        <div>
-          {workOrder.status !== "on progress" &&
-            workOrder.status !== "completed" &&
-            (isEditable || isAdmin) && (
+        <div className="flex gap-3">
+          {workOrder.status !== "completed" && isEditable && (
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-sm font-medium rounded-lg text-white hover:bg-amber-600 transition-all duration-200 disabled:opacity-50"
+              onClick={handleUpdateStatus}
+              disabled={
+                updatingStatus ||
+                downloading !== null ||
+                workOrder.status !== "pending"
+              }
+            >
+              {updatingStatus ? (
+                <CircleNotchIcon className="animate-spin w-4 h-4" />
+              ) : (
+                <PlayIcon weight="duotone" className="w-4 h-4" />
+              )}
+              {updatingStatus ? "Updating..." : `Set On Progress`}
+            </button>
+          )}
+          {(workOrder.status === "in_progress" ||
+            workOrder.status === "on progress") &&
+            isEditable &&
+            isAdmin && (
               <button
                 type="button"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-sm font-medium rounded-lg text-white hover:bg-amber-600 transition-all duration-200 disabled:opacity-50"
-                onClick={handleUpdateStatus}
-                disabled={
-                  updatingStatus ||
-                  downloading !== null ||
-                  workOrder.status !== "pending"
-                }
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-500 text-sm font-medium rounded-lg text-white hover:bg-gray-600 transition-all duration-200 disabled:opacity-50"
+                onClick={handleRevertStatus}
+                disabled={updatingStatus || downloading !== null}
               >
                 {updatingStatus ? (
                   <CircleNotchIcon className="animate-spin w-4 h-4" />
                 ) : (
-                  <PlayIcon weight="duotone" className="w-4 h-4" />
+                  <ArrowCircleLeftIcon weight="duotone" className="w-4 h-4" />
                 )}
-                {updatingStatus ? "Updating..." : `Set On Progress`}
+                {updatingStatus ? "Updating..." : `Revert to Pending`}
               </button>
             )}
         </div>
@@ -727,7 +778,7 @@ function SPKShowPage() {
             type="button"
             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:border-red-300 hover:text-red-600 transition-all duration-200 disabled:opacity-50"
             onClick={() => handleDownload("pdf")}
-            disabled={downloading !== null || (!isEditable && !isAdmin)}
+            disabled={downloading !== null}
           >
             {downloading === "pdf" ? (
               <CircleNotchIcon className="animate-spin w-4 h-4" />
@@ -740,7 +791,7 @@ function SPKShowPage() {
             type="button"
             className="inline-flex items-center gap-2 px-6 py-3 bg-white text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:border-emerald-300 hover:text-emerald-600 transition-all duration-200 disabled:opacity-50"
             onClick={() => handleDownload("excel")}
-            disabled={downloading !== null || (!isEditable && !isAdmin)}
+            disabled={downloading !== null}
           >
             {downloading === "excel" ? (
               <CircleNotchIcon className="animate-spin w-4 h-4" />

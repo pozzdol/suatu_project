@@ -63,11 +63,14 @@ class WorkOrderController extends Controller
 
             $payload = [
                 'id' => $workOrder->id,
+                'orderId' => $workOrder->order?->id ?? '',
                 'orderId' => $workOrder->order_id,
                 'orderName' => $workOrder->order?->name ?? '',
+                'orderEmail' => $workOrder->order?->email ?? '',
                 'noSurat' => $workOrder->no_surat,
                 'description' => $workOrder->description,
                 'status' => $workOrder->status,
+                'statusOrder' => $workOrder->order?->status ?? '',
                 'orderItems' => $workOrder->order?->orderItems->map(function ($item) {
                     return [
                         'id' => $item->id,

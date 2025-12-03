@@ -10,6 +10,7 @@ import ProductIndexPage from "./pages/application/product/Index";
 import RawMaterialIndexPage from "./pages/application/raw-material/Index";
 import OrdersRoutes from "./routes/OrdersRoutes";
 import SPKRoutes from "./routes/SPKRoutes";
+import WarehouseRoutes from "./routes/WarehouseRoutes";
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
 
           <Route path="/orders/*" element={<OrdersRoutes />} />
           <Route path="/spk/*" element={<SPKRoutes />} />
+          <Route path="/warehouse/*" element={<WarehouseRoutes />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
