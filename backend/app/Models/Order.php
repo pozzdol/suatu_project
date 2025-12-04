@@ -29,7 +29,6 @@ class Order extends Model
         'email',
         'phone',
         'address',
-        'delivery_address',
         'status',
         'deleted',
     ];

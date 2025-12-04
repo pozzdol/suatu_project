@@ -393,7 +393,7 @@ function DetailSpkPage() {
         // 2. Create delivery order
         try {
           const deliveryOrderPayload = {
-            orderId: id,
+            orderId: workOrder?.orderId || id,
             description: `Delivery order for Work Order ${
               workOrder?.noSurat || id
             }`,

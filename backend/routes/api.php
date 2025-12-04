@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DeliveryOrderController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FinishedGoodsController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrdersController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PermitController;
@@ -161,4 +162,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/transactions/delivery-orders/mass-delete', [DeliveryOrderController::class, 'massDestroy']);
     Route::delete('/transactions/delivery-orders/{id}', [DeliveryOrderController::class, 'destroy']);
     Route::delete('/transactions/delivery-orders', [DeliveryOrderController::class, 'destroy']);
+
+    // Notification Routes
+    Route::get('/notifications/users', [NotificationController::class, 'getUsers']);
+    Route::get('/notifications/recipients', [NotificationController::class, 'getNotificationRecipients']);
+    Route::get('/notifications/low-stock-materials', [NotificationController::class, 'getLowStockMaterials']);
+    Route::put('/notifications/users/{id}/preference', [NotificationController::class, 'updateUserNotificationPreference']);
+    Route::post('/notifications/users/bulk-preference', [NotificationController::class, 'bulkUpdateNotificationPreference']);
 });

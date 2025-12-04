@@ -166,14 +166,26 @@ class DeliveryOrderController extends Controller
             }
 
             $validated = $validator->validated();
-            $deliveryOrder->status = $validated['status'];
+            $newStatus = $validated['status'];
+            $deliveryOrder->status = $newStatus;
 
-            // Auto-set timestamps based on status
-            if ($validated['status'] === 'shipped' && ! $deliveryOrder->shipped_at) {
+            // Auto-set/clear timestamps based on status
+            if ($newStatus === 'shipped') {
                 $deliveryOrder->shipped_at = now();
-            }
-            if ($validated['status'] === 'delivered' && ! $deliveryOrder->delivered_at) {
+                $deliveryOrder->delivered_at = null; // Clear delivered timestamp
+            } elseif ($newStatus === 'delivered') {
+                // Set shipped_at jika belum ada
+                if (! $deliveryOrder->shipped_at) {
+                    $deliveryOrder->shipped_at = now();
+                }
                 $deliveryOrder->delivered_at = now();
+            } elseif ($newStatus === 'pending') {
+                $deliveryOrder->shipped_at = null;
+                $deliveryOrder->delivered_at = null;
+            } elseif ($newStatus === 'cancelled') {
+                // Keep timestamps as historical record, or clear if needed
+                // $deliveryOrder->shipped_at = null;
+                // $deliveryOrder->delivered_at = null;
             }
 
             $deliveryOrder->save();
@@ -332,6 +344,19 @@ class DeliveryOrderController extends Controller
      */
     private function transformDeliveryOrder(DeliveryOrder $deliveryOrder): array
     {
+        // Transform order items (products)
+        $orderItems = [];
+        if ($deliveryOrder->order && $deliveryOrder->order->orderItems) {
+            $orderItems = $deliveryOrder->order->orderItems->map(function ($item) {
+                return [
+                    'id' => $item->id,
+                    'productId' => $item->product_id,
+                    'productName' => $item->product?->data['name']  ?? null,
+                    'quantity' => $item->quantity,
+                ];
+            })->toArray();
+        }
+
         return [
             'id' => $deliveryOrder->id,
             'orderId' => $deliveryOrder->order_id,
@@ -339,7 +364,7 @@ class DeliveryOrderController extends Controller
             'description' => $deliveryOrder->description,
             'recipientName' => $deliveryOrder->order?->name ?? null,
             'recipientPhone' => $deliveryOrder->order?->phone ?? null,
-            'deliveryAddress' => $deliveryOrder->order?->delivery_address ?? null,
+            'address' => $deliveryOrder->order?->address ?? null,
             'status' => $deliveryOrder->status,
             'shippedAt' => $deliveryOrder->shipped_at,
             'deliveredAt' => $deliveryOrder->delivered_at,
@@ -349,9 +374,11 @@ class DeliveryOrderController extends Controller
                 'email' => $deliveryOrder->order->email,
                 'phone' => $deliveryOrder->order->phone,
                 'address' => $deliveryOrder->order->address,
-                'deliveryAddress' => $deliveryOrder->order->delivery_address,
                 'status' => $deliveryOrder->order->status,
             ] : null,
+            'orderItems' => $orderItems,
+            'totalItems' => count($orderItems),
+            'totalQuantity' => array_sum(array_column($orderItems, 'quantity')),
             'deleted' => $deliveryOrder->deleted,
             'createdAt' => $deliveryOrder->created_at,
             'updatedAt' => $deliveryOrder->updated_at,

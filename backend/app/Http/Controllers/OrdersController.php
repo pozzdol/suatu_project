@@ -7,6 +7,7 @@ use App\Models\OrderItem;
 use App\Models\RawMaterial;
 use App\Models\RawMaterialUsage;
 use App\Models\WorkOrder;
+use App\Services\LowStockNotificationService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,13 @@ use Illuminate\Support\Facades\Validator;
 class OrdersController extends Controller
 {
     use ApiResponse;
+
+    protected LowStockNotificationService $lowStockNotificationService;
+
+    public function __construct(LowStockNotificationService $lowStockNotificationService)
+    {
+        $this->lowStockNotificationService = $lowStockNotificationService;
+    }
 
     public function index()
     {
@@ -263,8 +271,13 @@ class OrdersController extends Controller
                     );
                 }
 
-                $this->processRawMaterialUsage($order);
+                $usedRawMaterialIds = $this->processRawMaterialUsage($order);
                 $this->createOrRestoreWorkOrder($order, $workOrderDescription);
+
+                // Check and send low stock notification after raw material deducted
+                if (!empty($usedRawMaterialIds)) {
+                    $this->lowStockNotificationService->checkAndNotify($usedRawMaterialIds);
+                }
             }
 
             if ($targetStatus !== 'confirm' && $originalStatus === 'confirm') {
@@ -560,10 +573,13 @@ class OrdersController extends Controller
 
     /**
      * Proses penggunaan raw material: kurangi stock dan catat history
+     * @return array Array of raw material IDs that were used
      */
-    private function processRawMaterialUsage(Order $order): void
+    private function processRawMaterialUsage(Order $order): array
     {
         $order->load('orderItems.product');
+
+        $usedRawMaterialIds = [];
 
         foreach ($order->orderItems as $orderItem) {
             $product = $orderItem->product;
@@ -588,8 +604,15 @@ class OrdersController extends Controller
                         'raw_material_id' => $rawMaterialId,
                         'quantity_used' => $quantityUsed,
                     ]);
+
+                    // Collect used raw material IDs
+                    if (!in_array($rawMaterialId, $usedRawMaterialIds)) {
+                        $usedRawMaterialIds[] = $rawMaterialId;
+                    }
                 }
             }
         }
+
+        return $usedRawMaterialIds;
     }
 }

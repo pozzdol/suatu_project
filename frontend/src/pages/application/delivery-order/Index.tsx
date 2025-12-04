@@ -8,6 +8,7 @@ import Loading from "@/components/Loading";
 import Permit from "@/components/Permit";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
 import { EyeIcon, InfoIcon } from "@phosphor-icons/react";
+import dayjs from "dayjs";
 
 type WorkOrderItem = {
   productName: string;
@@ -69,7 +70,7 @@ function DeliveryOrderPage() {
 
   // -- PAGE LOAD END --
 
-  useDocumentTitle(title || "Work Orders");
+  useDocumentTitle(title || "Delivery Orders");
 
   // STATE MANAGEMENT
   // STATE MANAGEMENT END
@@ -78,15 +79,15 @@ function DeliveryOrderPage() {
   const fetchWorkOrders = async () => {
     setLoadingOrders(true);
     try {
-      const response = await requestApi.get("/transactions/work-orders/list");
+      const response = await requestApi.get("/transactions/delivery-orders/list");
       if (response && response.data.success) {
         const mappedOrders: WorkOrder[] =
-          response.data.data.workOrders?.map((order: any) => ({
+          response.data.data.deliveryOrders?.map((order: any) => ({
             id: order.id,
             orderCode: order.noSurat || "-",
-            customerName: order.orderName || "Unknown Customer",
-            customerEmail: order.orderEmail || "Unknown User",
-            confirmedAt: order.updated_at || null,
+            customerName: order.recipientName || "Unknown Customer",
+            customerEmail: order.order.email || "Unknown User",
+            confirmedAt: order.createdAt || null,
             status: order.status || "pending",
             items:
               order.orderItems?.map((item: any) => ({
@@ -97,11 +98,11 @@ function DeliveryOrderPage() {
 
         setWorkOrders(mappedOrders);
       } else {
-        toast.error("Failed to fetch work order data");
+        toast.error("Failed to fetch delivery order data");
       }
     } catch (error) {
-      console.error("Failed to fetch work order data:", error);
-      toast.error("Failed to fetch work order data");
+      console.error("Failed to fetch delivery order data:", error);
+      toast.error("Failed to fetch delivery order data");
     } finally {
       setLoadingOrders(false);
     }
@@ -117,43 +118,23 @@ function DeliveryOrderPage() {
   // EFFECTS END
 
   //  HELPERS
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return "-";
-    try {
-      return new Intl.DateTimeFormat("id-ID", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(new Date(dateString));
-    } catch (error) {
-      return dateString;
-    }
-  };
-
   const getStatusBadge = (status?: string) => {
     const statusConfig: Record<
       string,
       { label: string; bg: string; text: string }
     > = {
-      draft: {
-        label: "Draft",
+      Pending: {
+        label: "Pending",
         bg: "bg-gray-100",
         text: "text-gray-700",
       },
-      Pending: {
-        label: "Pending",
+      Shipped: {
+        label: "Shipped",
         bg: "bg-yellow-100",
         text: "text-yellow-700",
       },
-      "On Progress": {
-        label: "Processing",
-        bg: "bg-blue-100",
-        text: "text-blue-700",
-      },
-      Completed: {
-        label: "Completed",
+      Delivered: {
+        label: "Delivered",
         bg: "bg-emerald-100",
         text: "text-emerald-700",
       },
@@ -195,8 +176,8 @@ function DeliveryOrderPage() {
 
   const status = {
     pending: "Pending",
-    in_progress: "On Progress",
-    completed: "Completed",
+    shipped: "Shipped",
+    delivered: "Delivered",
     cancelled: "Cancelled",
   };
   // FUNCTIONS END
@@ -248,11 +229,11 @@ function DeliveryOrderPage() {
         ) : workOrders.length === 0 ? (
           <div className="bg-white rounded-xl border border-dashed border-gray-300 p-10 text-center">
             <p className="text-lg font-medium text-gray-700">
-              Belum ada Work Order
+              Belum ada Delivery Order
             </p>
             <p className="text-sm text-gray-500 mt-1">
               Pesanan yang sudah dikonfirmasi akan tampil di sini. Gunakan
-              halaman Orders untuk membuat Work Order baru.
+              halaman Orders untuk membuat Delivery Order baru.
             </p>
           </div>
         ) : (
@@ -265,7 +246,7 @@ function DeliveryOrderPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400">
-                      Work Order
+                      Delivery Order
                     </p>
                     <h2 className="text-2xl font-semibold text-gray-900 mt-1">
                       {order.orderCode}
@@ -297,7 +278,7 @@ function DeliveryOrderPage() {
                         Confirmed At
                       </p>
                       <p className="text-sm text-gray-700 mt-1">
-                        {formatDate(order.confirmedAt)}
+                        {dayjs(order.confirmedAt).format("DD MMMM YYYY")}
                       </p>
                     </div>
                   </div>

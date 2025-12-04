@@ -16,6 +16,8 @@ import AdminOrganizationIndexPage from "@/pages/admin/organization/Index";
 import AdminOrganizationCreatePage from "@/pages/admin/organization/Create";
 import AdminOrganizationEditPage from "@/pages/admin/organization/Edit";
 import AdminDepartmentEditPage from "@/pages/admin/department/Edit";
+import Notification from "@/pages/admin/notification/";
+import NotificationCreatePage from "@/pages/admin/notification/Create";
 
 function SetupRoutes() {
   return (
@@ -141,6 +143,24 @@ function SetupRoutes() {
         element={
           <Layout isActive="/general-setup/organization">
             <AdminOrganizationEditPage />
+          </Layout>
+        }
+      />
+
+      <Route
+        path="/notification"
+        element={
+          <Layout isActive="/general-setup/notification">
+            <Notification />
+          </Layout>
+        }
+      />
+
+      <Route
+        path="/notification/create"
+        element={
+          <Layout isActive="/general-setup/notification">
+            <NotificationCreatePage />
           </Layout>
         }
       />

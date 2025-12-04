@@ -93,14 +93,15 @@ function DeliveryOrderShowPage() {
     setLoadingDetail(true);
     try {
       const response = await requestApi.get(
-        `/transactions/work-orders/edit/${id}`
+        `/transactions/delivery-orders/edit/${id}`
       );
+      console.log(JSON.stringify(response.data));
       if (response && response.data.success) {
-        const order = response.data.data.workOrder;
+        const order = response.data.data.deliveryOrder;
         const mappedOrder: WorkOrderDetail = {
           id: order.id,
           noSurat: order.noSurat || order.no_surat || "-",
-          orderName: order.orderName || order.order_name || "Unknown",
+          orderName: order.recipientName || order.order_name || "Unknown",
           orderEmail:
             order.orderEmail || order.order_email || "unknown@email.com",
           status: order.status || "pending",
@@ -164,21 +165,37 @@ function DeliveryOrderShowPage() {
     }
 
     if (!id) {
-      toast.error("Work order ID not found");
+      toast.error("Delivery order ID not found");
+      return;
+    }
+
+    // Tentukan next status berdasarkan current status
+    const currentStatus = workOrder?.status;
+    let nextStatus = "";
+    let successMessage = "";
+
+    if (currentStatus === "pending") {
+      nextStatus = "shipped";
+      successMessage = "Status updated to Shipped";
+    } else if (currentStatus === "shipped") {
+      nextStatus = "delivered";
+      successMessage = "Status updated to Delivered";
+    } else {
+      toast.error("Cannot update status from current state");
       return;
     }
 
     setUpdatingStatus(true);
     try {
       const response = await requestApi.put(
-        `/transactions/work-orders/status/${id}`,
-        { status: "in_progress" }
+        `/transactions/delivery-orders/status/${id}`,
+        { status: nextStatus }
       );
 
       if (response && response.data.success) {
-        toast.success("Status updated to On Progress");
+        toast.success(successMessage);
         setWorkOrder((prev) =>
-          prev ? { ...prev, status: "in_progress" } : null
+          prev ? { ...prev, status: nextStatus } : null
         );
       } else {
         toast.error(response?.data?.message || "Failed to update status");
@@ -198,20 +215,36 @@ function DeliveryOrderShowPage() {
     }
 
     if (!id) {
-      toast.error("Work order ID not found");
+      toast.error("Delivery order ID not found");
+      return;
+    }
+
+    // Tentukan previous status berdasarkan current status
+    const currentStatus = workOrder?.status;
+    let prevStatus = "";
+    let successMessage = "";
+
+    if (currentStatus === "shipped") {
+      prevStatus = "pending";
+      successMessage = "Status reverted to Pending";
+    } else if (currentStatus === "delivered") {
+      prevStatus = "shipped";
+      successMessage = "Status reverted to Shipped";
+    } else {
+      toast.error("Cannot revert status from current state");
       return;
     }
 
     setUpdatingStatus(true);
     try {
       const response = await requestApi.put(
-        `/transactions/work-orders/status/${id}`,
-        { status: "pending" }
+        `/transactions/delivery-orders/status/${id}`,
+        { status: prevStatus }
       );
 
       if (response && response.data.success) {
-        toast.success("Status reverted to Pending");
-        setWorkOrder((prev) => (prev ? { ...prev, status: "pending" } : null));
+        toast.success(successMessage);
+        setWorkOrder((prev) => (prev ? { ...prev, status: prevStatus } : null));
       } else {
         toast.error(response?.data?.message || "Failed to revert status");
       }
@@ -221,13 +254,6 @@ function DeliveryOrderShowPage() {
     } finally {
       setUpdatingStatus(false);
     }
-  };
-
-  const statusMap: Record<string, string> = {
-    pending: "Pending",
-    in_progress: "On Progress",
-    completed: "Completed",
-    cancelled: "Cancelled",
   };
 
   // --- FUNGSI DOWNLOAD ---
@@ -590,7 +616,7 @@ function DeliveryOrderShowPage() {
       {/* Action Buttons (Tidak berubah logika) */}
       <div className="flex justify-between gap-3 mt-6 print:hidden max-w-[1000px] mx-auto">
         <div className="flex gap-3">
-          {workOrder.status !== "completed" && isEditable && (
+          {workOrder.status === "pending" && isEditable && (
             <button
               type="button"
               className="inline-flex items-center gap-2 px-6 py-3 bg-amber-500 text-sm font-medium rounded-lg text-white hover:bg-amber-600 transition-all disabled:opacity-50"
@@ -606,11 +632,31 @@ function DeliveryOrderShowPage() {
               ) : (
                 <PlayIcon weight="duotone" className="w-4 h-4" />
               )}
-              {updatingStatus ? "Updating..." : `Set On Progress`}
+              {updatingStatus ? "Updating..." : `Set to Shipped`}
             </button>
           )}
-          {(workOrder.status === "in_progress" ||
-            workOrder.status === "on progress") &&
+
+          {workOrder.status === "shipped" && isEditable && (
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-sm font-medium rounded-lg text-white hover:bg-emerald-600 transition-all disabled:opacity-50"
+              onClick={handleUpdateStatus}
+              disabled={
+                updatingStatus ||
+                downloading !== null ||
+                workOrder.status !== "shipped"
+              }
+            >
+              {updatingStatus ? (
+                <CircleNotchIcon className="animate-spin w-4 h-4" />
+              ) : (
+                <PlayIcon weight="duotone" className="w-4 h-4" />
+              )}
+              {updatingStatus ? "Updating..." : `Set to Delivered`}
+            </button>
+          )}
+
+          {workOrder.status === "shipped" &&
             isEditable &&
             isAdmin && (
               <button
@@ -625,6 +671,24 @@ function DeliveryOrderShowPage() {
                   <ArrowCircleLeftIcon weight="duotone" className="w-4 h-4" />
                 )}
                 {updatingStatus ? "Updating..." : `Revert to Pending`}
+              </button>
+            )}
+
+            {workOrder.status === "delivered" &&
+            isEditable &&
+            isAdmin && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-500 text-sm font-medium rounded-lg text-white hover:bg-gray-600 transition-all disabled:opacity-50"
+                onClick={handleRevertStatus}
+                disabled={updatingStatus || downloading !== null}
+              >
+                {updatingStatus ? (
+                  <CircleNotchIcon className="animate-spin w-4 h-4" />
+                ) : (
+                  <ArrowCircleLeftIcon weight="duotone" className="w-4 h-4" />
+                )}
+                {updatingStatus ? "Updating..." : `Revert to Shipped`}
               </button>
             )}
         </div>
