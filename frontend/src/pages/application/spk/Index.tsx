@@ -267,7 +267,9 @@ function SPKIndexPage() {
                       {order.orderCode}
                     </h2>
                   </div>
-                  {getStatusBadge(order.status ? status[order.status] : undefined)}
+                  {getStatusBadge(
+                    order.status ? status[order.status] : undefined
+                  )}
                 </div>
 
                 <div className="mt-5 space-y-4">

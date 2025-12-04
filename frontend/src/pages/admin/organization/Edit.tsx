@@ -6,10 +6,7 @@ import { requestApi } from "@/utils/api";
 import { validatePermit } from "@/utils/validation";
 import Loading from "@/components/Loading";
 import Permit from "@/components/Permit";
-import {
-  ArrowCircleLeftIcon,
-  CircleNotchIcon,
-} from "@phosphor-icons/react";
+import { ArrowCircleLeftIcon, CircleNotchIcon } from "@phosphor-icons/react";
 import { Checkbox, Input } from "antd";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
 

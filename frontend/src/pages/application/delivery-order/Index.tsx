@@ -75,7 +75,9 @@ function DeliveryOrderPage() {
   const fetchWorkOrders = async () => {
     setLoadingOrders(true);
     try {
-      const response = await requestApi.get("/transactions/delivery-orders/list");
+      const response = await requestApi.get(
+        "/transactions/delivery-orders/list"
+      );
       if (response && response.data.success) {
         const mappedOrders: WorkOrder[] =
           response.data.data.deliveryOrders?.map((order: any) => ({
@@ -244,7 +246,9 @@ function DeliveryOrderPage() {
                       {order.orderCode}
                     </h2>
                   </div>
-                  {getStatusBadge(order.status ? status[order.status] : undefined)}
+                  {getStatusBadge(
+                    order.status ? status[order.status] : undefined
+                  )}
                 </div>
 
                 <div className="mt-5 space-y-4">

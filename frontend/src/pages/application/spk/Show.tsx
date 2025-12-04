@@ -593,7 +593,9 @@ function SPKShowPage() {
               </div>
               <div className="flex">
                 <div className="p-1 pl-2 font-medium">Status :</div>
-                <div className="grow p-1">{workOrder.status ? status[workOrder.status] : "-"}</div>
+                <div className="grow p-1">
+                  {workOrder.status ? status[workOrder.status] : "-"}
+                </div>
               </div>
             </div>
 
