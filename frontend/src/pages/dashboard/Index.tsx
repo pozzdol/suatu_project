@@ -2,7 +2,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { requestApi } from "@/utils/api";
 import { validatePermit } from "@/utils/validation";
 import toast from "react-hot-toast";
 import { Button } from "antd";
@@ -15,18 +14,13 @@ import { FileSearchIcon } from "@phosphor-icons/react";
 function DashboardIndexPage() {
   // PAGE LOAD
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [subTitle, setSubtitle] = useState("");
-  const [indexUrl, setIndexUrl] = useState("");
   const [permit, setPermit] = useState(false);
-  const [isEditable, setIsEditable] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const initializePage = async () => {
       try {
-        setLoading(true);
         const pageData = await validatePermit(
           "9e2ad4d2d55a4faab5a082386def0bee"
         );
@@ -34,10 +28,7 @@ function DashboardIndexPage() {
         if (pageData && pageData.success && pageData.data.permit.permission) {
           setTitle(pageData.data.page.name);
           setSubtitle(pageData.data.page.description);
-          setIndexUrl(pageData.data.page.url);
           setPermit(pageData.data.permit.permission);
-          setIsEditable(pageData.data.permit.isEditable);
-          setIsAdmin(pageData.data.permit.isAdmin);
         } else {
           setPermit(false);
           toast.error("You don't have permission to access this page");
@@ -46,8 +37,6 @@ function DashboardIndexPage() {
         setPermit(false);
         console.error("Failed to validate permissions, ", error);
         toast.error("Failed to validate permissions");
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -57,7 +46,6 @@ function DashboardIndexPage() {
   // -- PAGE LOAD END --
 
   // STATE MANAGEMENT
-  const [isLogout, setIsLogout] = useState(false);
   // STATE MANAGEMENT END
 
   // FETCH DATA
@@ -76,7 +64,6 @@ function DashboardIndexPage() {
 
   // FUNCTIONS
   const handleLogout = async () => {
-    setIsLogout(true);
     try {
       await logout();
       toast.success("Logout berhasil!");

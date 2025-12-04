@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { isAuthenticatedWithValidation, forceLogout } from "@/utils/auth";
+import { isAuthenticatedWithValidation } from "@/utils/auth";
 
 export const useInitialAuth = () => {
   useEffect(() => {

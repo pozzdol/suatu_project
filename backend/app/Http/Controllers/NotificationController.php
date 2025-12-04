@@ -19,14 +19,24 @@ class NotificationController extends Controller
     public function getUsers()
     {
         try {
-            $users = User::whereNull('deleted_at')
-                ->select('id', 'name', 'email', 'receive_stock_notification')
+            $users = User::with('role')
+                ->select('id', 'name', 'email', 'receive_stock_notification', 'role_id')
                 ->orderBy('name', 'asc')
-                ->get();
+                ->get()
+                ->map(function ($user) {
+                    return [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'receive_stock_notification' => $user->receive_stock_notification,
+                        'role_id' => $user->role_id,
+                        'role_name' => $user->role?->data['name'] ?? null,
+                    ];
+                });
 
             return $this->apiResponse(['users' => $users], 'Users retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Get users for notification error: ' . $e->getMessage());
+            Log::error('Get users for notification error: '.$e->getMessage());
 
             return $this->apiError('Failed to retrieve users.', null, 500);
         }
@@ -50,7 +60,7 @@ class NotificationController extends Controller
         try {
             $user = User::find($id);
 
-            if (!$user) {
+            if (! $user) {
                 return $this->apiError('User not found.', null, 404);
             }
 
@@ -63,10 +73,10 @@ class NotificationController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'receive_stock_notification' => $user->receive_stock_notification,
-                ]
+                ],
             ], 'User notification preference updated successfully.');
         } catch (\Exception $e) {
-            Log::error('Update user notification preference error: ' . $e->getMessage());
+            Log::error('Update user notification preference error: '.$e->getMessage());
 
             return $this->apiError('Failed to update user preference.', null, 500);
         }
@@ -74,6 +84,8 @@ class NotificationController extends Controller
 
     /**
      * Bulk update user notification preferences
+     * Users in the list will be set to the given value
+     * Users NOT in the list will be set to the opposite value
      */
     public function bulkUpdateNotificationPreference(Request $request)
     {
@@ -91,15 +103,23 @@ class NotificationController extends Controller
 
         try {
             $validated = $validator->validated();
+            $userIds = $validated['userIds'];
+            $value = $validated['receive_stock_notification'];
 
-            User::whereIn('id', $validated['userIds'])
-                ->update(['receive_stock_notification' => $validated['receive_stock_notification']]);
+            // Set users in list to the given value
+            User::whereIn('id', $userIds)
+                ->update(['receive_stock_notification' => $value]);
+
+            // Set users NOT in list to the opposite value
+            User::whereNotIn('id', $userIds)
+                ->update(['receive_stock_notification' => ! $value]);
 
             return $this->apiResponse([
-                'updated_count' => count($validated['userIds']),
+                'enabled_count' => $value ? count($userIds) : User::where('receive_stock_notification', true)->count(),
+                'disabled_count' => $value ? User::where('receive_stock_notification', false)->count() : count($userIds),
             ], 'User notification preferences updated successfully.');
         } catch (\Exception $e) {
-            Log::error('Bulk update notification preference error: ' . $e->getMessage());
+            Log::error('Bulk update notification preference error: '.$e->getMessage());
 
             return $this->apiError('Failed to update user preferences.', null, 500);
         }
@@ -132,7 +152,7 @@ class NotificationController extends Controller
                 'threshold' => $threshold,
             ], 'Low stock materials retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Get low stock materials error: ' . $e->getMessage());
+            Log::error('Get low stock materials error: '.$e->getMessage());
 
             return $this->apiError('Failed to retrieve low stock materials.', null, 500);
         }
@@ -155,7 +175,7 @@ class NotificationController extends Controller
                 'count' => $users->count(),
             ], 'Notification recipients retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Get notification recipients error: ' . $e->getMessage());
+            Log::error('Get notification recipients error: '.$e->getMessage());
 
             return $this->apiError('Failed to retrieve notification recipients.', null, 500);
         }

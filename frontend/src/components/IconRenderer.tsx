@@ -1,14 +1,23 @@
 import {
   AppWindowIcon,
+  BowlFoodIcon,
   BriefcaseIcon,
   BuildingApartmentIcon,
   BuildingIcon,
+  DatabaseIcon,
+  EnvelopeOpenIcon,
+  FlagIcon,
   GearIcon,
   HouseIcon,
   KeyIcon,
+  PackageIcon,
+  ShoppingBagIcon,
+  ShrimpIcon,
+  TruckIcon,
   UserCircleGearIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
+import { BellSimpleIcon } from "@phosphor-icons/react/dist/ssr";
 
 interface IconRendererProps {
   name: string;
@@ -36,6 +45,15 @@ export function IconRenderer({
     Key: KeyIcon,
     Building: BuildingIcon,
     BuildingApartment: BuildingApartmentIcon,
+    BowlFood: BowlFoodIcon,
+    Database: DatabaseIcon,
+    EnvelopeOpen: EnvelopeOpenIcon,
+    Flag: FlagIcon,
+    Package: PackageIcon,
+    ShoppingBag: ShoppingBagIcon,
+    Shrimp: ShrimpIcon,
+    Truck: TruckIcon,
+    BellSimple: BellSimpleIcon,
   };
 
   const Icon = iconMap[name] || AppWindowIcon; // Default ke AppWindowIcon jika tidak ditemukan

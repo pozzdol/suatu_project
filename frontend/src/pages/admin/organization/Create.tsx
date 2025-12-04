@@ -9,10 +9,8 @@ import Permit from "@/components/Permit";
 import {
   ArrowCircleLeftIcon,
   CircleNotchIcon,
-  GearSixIcon,
-  ShuffleIcon,
 } from "@phosphor-icons/react";
-import { Checkbox, Input, InputNumber } from "antd";
+import { Checkbox, Input } from "antd";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
 
 interface FormData {
@@ -30,7 +28,6 @@ function AdminOrganizationCreatePage() {
   const [indexUrl, setIndexUrl] = useState("");
   const [permit, setPermit] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const initializePage = async () => {
@@ -46,7 +43,6 @@ function AdminOrganizationCreatePage() {
           setIndexUrl(pageData.data.page.url);
           setPermit(pageData.data.permit.permission);
           setIsEditable(pageData.data.permit.isEditable);
-          setIsAdmin(pageData.data.permit.isAdmin);
         } else {
           setPermit(false);
           toast.error("You don't have permission to access this page");

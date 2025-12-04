@@ -56,7 +56,6 @@ function Notification() {
   const navigate = useNavigate();
   const [permit, setPermit] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   const [title, setTitle] = useState("");
   const [subTitle, setSubtitle] = useState("");
@@ -69,7 +68,7 @@ function Notification() {
       try {
         setLoading(true);
         const pageData = await validatePermit(
-          "46f6c4a0a50146f1b40ea9798aab9738"
+          "6b77f858b967403f8e34b61c62969b1a"
         );
 
         if (pageData && pageData.success && pageData.data.permit.permission) {
@@ -79,7 +78,6 @@ function Notification() {
 
           setPermit(pageData.data.permit.permission);
           setIsEditable(pageData.data.permit.isEditable);
-          setIsAdmin(pageData.data.permit.isAdmin);
         } else {
           toast.error("You don't have permission to access this page");
         }
@@ -107,9 +105,9 @@ function Notification() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await requestApi.get("/general/setup/notifications/list");
+      const response = await requestApi.get("/notifications/users");
       if (response && response.data.success) {
-        setData(response.data.data.notifications);
+        setData(response.data.data.users);
       } else {
         toast.error("Failed to fetch notification data");
       }
@@ -130,23 +128,6 @@ function Notification() {
   }, [permit]);
   // EFFECTS END
 
-  //  HELPERS
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return "-";
-    try {
-      return new Intl.DateTimeFormat("id-ID", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(new Date(dateString));
-    } catch {
-      return dateString;
-    }
-  };
-  // HELPERS END
-
   // FUNCTIONS
   const handleCreate = () => {
     navigate(`${indexUrl}/create`);
@@ -154,10 +135,6 @@ function Notification() {
 
   const handleRefresh = () => {
     fetchData();
-  };
-
-  const handleDetail = (row: NotificationData) => {
-    navigate(`${indexUrl}/${row.id}`);
   };
 
   const handleMassDelete = async (selectedIds: string[]) => {
@@ -223,21 +200,8 @@ function Notification() {
   const headers: TableHeader[] = useMemo(
     () => [
       {
-        label: "",
-        field: "",
-        type: "text" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        width: "8px",
-        minWidth: "8px",
-        maxWidth: "8px",
-        exportable: false,
-        showOnMobile: true,
-      },
-      {
-        label: "Title",
-        field: "title",
+        label: "Name",
+        field: "name",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -246,8 +210,8 @@ function Notification() {
         exportable: true,
       },
       {
-        label: "Message",
-        field: "message",
+        label: "Email",
+        field: "email",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -256,38 +220,8 @@ function Notification() {
         exportable: true,
       },
       {
-        label: "Type",
-        field: "type",
-        type: "select" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-        options: [
-          { value: "info", label: "Info" },
-          { value: "warning", label: "Warning" },
-          { value: "error", label: "Error" },
-          { value: "success", label: "Success" },
-        ],
-      },
-      {
-        label: "Status",
-        field: "isRead",
-        type: "select" as HeaderType,
-        isNumeric: false,
-        isMultiSelect: false,
-        allowTextInput: false,
-        showOnMobile: true,
-        exportable: true,
-        options: [
-          { value: "true", label: "Read" },
-          { value: "false", label: "Unread" },
-        ],
-      },
-      {
-        label: "Created At",
-        field: "createdAt",
+        label: "Role",
+        field: "role_name",
         type: "text" as HeaderType,
         isNumeric: false,
         isMultiSelect: false,
@@ -445,65 +379,27 @@ function Notification() {
         headers={headers}
         data={data}
         isTotalEnabled={false}
-        onDetail={handleDetail}
+        onDetail={() => null}
         filters={filters}
         setFilters={setFilters}
         handleResetFilters={handleResetFilters}
         filteredData={filteredData}
         itemsPerPage={10}
-        isCheckboxEnabled={true}
-        onSelectionChange={setSelectedRows}
+        isCheckboxEnabled={false}
         isSortEnabled={true}
         isMultiSortEnabled={false}
         defaultSorts={[{ field: "createdAt", order: "desc", priority: 0 }]}
         renderRow={(row) => {
           return (
             <>
-              <td className="py-2 text-xs text-gray-500 border-b border-gray-300 w-4 max-w-4">
-                <button
-                  className="rounded flex justify-center items-center hover:text-gray-700 cursor-pointer p-1 hover:bg-gray-200"
-                  onClick={() => handleDetail(row)}
-                  disabled={!isEditable}
-                >
-                  📄
-                </button>
+              <td className="py-2 text-xs text-gray-500 border-b border-gray-300 px-2">
+                {row.name}
               </td>
               <td className="py-2 text-xs text-gray-500 border-b border-gray-300 px-2">
-                {row.title}
-              </td>
-              <td className="py-2 text-xs text-gray-500 border-b border-gray-300 px-2 max-w-[300px] truncate">
-                {row.message}
-              </td>
-              <td className="py-2 text-xs border-b border-gray-300 px-2">
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    row.type === "info"
-                      ? "bg-blue-100 text-blue-700"
-                      : row.type === "warning"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : row.type === "error"
-                      ? "bg-red-100 text-red-700"
-                      : row.type === "success"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                >
-                  {row.type}
-                </span>
-              </td>
-              <td className="py-2 text-xs border-b border-gray-300 px-2">
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    row.isRead
-                      ? "bg-gray-100 text-gray-600"
-                      : "bg-blue-100 text-blue-700"
-                  }`}
-                >
-                  {row.isRead ? "Read" : "Unread"}
-                </span>
+                {row.email}
               </td>
               <td className="py-2 text-xs text-gray-500 border-b border-gray-300 px-2">
-                {formatDate(row.createdAt)}
+                {row.role_name}
               </td>
             </>
           );

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
 import { requestApi } from "@/utils/api";
@@ -39,14 +38,9 @@ type RoleWindowTreeProps = {
 
 function RoleWindowTree({ permitData, id }: RoleWindowTreeProps) {
   // PAGE LOAD
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [title, setTitle] = useState("");
-  const [subTitle, setSubtitle] = useState("");
-  const [indexUrl, setIndexUrl] = useState("");
   const [permit, setPermit] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const initializePage = async () => {
@@ -55,12 +49,8 @@ function RoleWindowTree({ permitData, id }: RoleWindowTreeProps) {
         const pageData = await validatePermit(permitData);
 
         if (pageData && pageData.success && pageData.data.permit.permission) {
-          setTitle(pageData.data.page.name);
-          setSubtitle(pageData.data.page.description);
-          setIndexUrl(pageData.data.page.url);
           setPermit(pageData.data.permit.permission);
           setIsEditable(pageData.data.permit.isEditable);
-          setIsAdmin(pageData.data.permit.isAdmin);
         } else {
           setPermit(false);
           toast.error("You don't have permission to access this page");

@@ -74,11 +74,6 @@ interface CombinedFilter {
   searchText: string;
 }
 
-interface SelectOption {
-  value: string;
-  label: string;
-}
-
 interface SortState {
   field: string;
   order: SortOrder;

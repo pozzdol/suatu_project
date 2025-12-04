@@ -44,7 +44,6 @@ export default function AdminUserIndexPage() {
   const navigate = useNavigate();
   const [permit, setPermit] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   const [title, setTitle] = useState("");
   const [subTitle, setSubtitle] = useState("");
@@ -67,7 +66,6 @@ export default function AdminUserIndexPage() {
 
           setPermit(pageData.data.permit.permission);
           setIsEditable(pageData.data.permit.isEditable);
-          setIsAdmin(pageData.data.permit.isAdmin);
         } else {
           toast.error("You don't have permission to access this page");
         }
@@ -180,23 +178,6 @@ export default function AdminUserIndexPage() {
   };
 
   // TABLE HEADERS
-  const getUniqueIsParent = (
-    data: WindowData[]
-  ): { value: string; label: string }[] => {
-    if (!data) return [];
-
-    const uniqueIsParent = Array.from(
-      new Set(data.map((item) => item.data_isParent))
-    )
-      .sort()
-      .map((item) => ({
-        value: String(item),
-        label: item ? "Yes" : "No",
-      }));
-
-    return [...uniqueIsParent];
-  };
-
   const headers: TableHeader[] = useMemo(
     () => [
       {

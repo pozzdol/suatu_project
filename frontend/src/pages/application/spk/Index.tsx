@@ -32,8 +32,6 @@ function SPKIndexPage() {
   const [subTitle, setSubtitle] = useState("");
   const [indexUrl, setIndexUrl] = useState("");
   const [permit, setPermit] = useState(false);
-  const [isEditable, setIsEditable] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
@@ -50,8 +48,6 @@ function SPKIndexPage() {
           setSubtitle(pageData.data.page.description);
           setIndexUrl(pageData.data.page.url);
           setPermit(pageData.data.permit.permission);
-          setIsEditable(pageData.data.permit.isEditable);
-          setIsAdmin(pageData.data.permit.isAdmin);
         } else {
           setPermit(false);
           toast.error("You don't have permission to access this page");
@@ -193,7 +189,7 @@ function SPKIndexPage() {
     navigate(`${indexUrl}/detail/${id}`);
   };
 
-  const status = {
+  const status: Record<string, string> = {
     pending: "Pending",
     in_progress: "On Progress",
     completed: "Completed",
@@ -271,7 +267,7 @@ function SPKIndexPage() {
                       {order.orderCode}
                     </h2>
                   </div>
-                  {getStatusBadge(status[order.status])}
+                  {getStatusBadge(order.status ? status[order.status] : undefined)}
                 </div>
 
                 <div className="mt-5 space-y-4">

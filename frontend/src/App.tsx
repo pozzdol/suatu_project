@@ -11,6 +11,7 @@ import RawMaterialIndexPage from "./pages/application/raw-material/Index";
 import OrdersRoutes from "./routes/OrdersRoutes";
 import SPKRoutes from "./routes/SPKRoutes";
 import WarehouseRoutes from "./routes/WarehouseRoutes";
+import ProfileIndexPage from "./pages/admin/profile/Index";
 
 function App() {
   return (
@@ -57,6 +58,14 @@ function App() {
           <Route path="/orders/*" element={<OrdersRoutes />} />
           <Route path="/spk/*" element={<SPKRoutes />} />
           <Route path="/warehouse/*" element={<WarehouseRoutes />} />
+          <Route
+            path="/account"
+            element={
+              <Layout isActive={""}>
+                <ProfileIndexPage />
+              </Layout>
+            }
+          />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

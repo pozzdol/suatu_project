@@ -31,7 +31,6 @@ function AdminUserCreatePage() {
   const [indexUrl, setIndexUrl] = useState("");
   const [permit, setPermit] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const initializePage = async () => {
@@ -47,7 +46,6 @@ function AdminUserCreatePage() {
           setIndexUrl(pageData.data.page.url);
           setPermit(pageData.data.permit.permission);
           setIsEditable(pageData.data.permit.isEditable);
-          setIsAdmin(pageData.data.permit.isAdmin);
         } else {
           setPermit(false);
           toast.error("You don't have permission to access this page");

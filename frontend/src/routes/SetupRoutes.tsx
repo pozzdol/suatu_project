@@ -16,7 +16,7 @@ import AdminOrganizationIndexPage from "@/pages/admin/organization/Index";
 import AdminOrganizationCreatePage from "@/pages/admin/organization/Create";
 import AdminOrganizationEditPage from "@/pages/admin/organization/Edit";
 import AdminDepartmentEditPage from "@/pages/admin/department/Edit";
-import Notification from "@/pages/admin/notification/";
+import Notification from "@/pages/admin/notification/Index";
 import NotificationCreatePage from "@/pages/admin/notification/Create";
 
 function SetupRoutes() {

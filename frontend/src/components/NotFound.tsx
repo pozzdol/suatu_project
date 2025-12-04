@@ -1,5 +1,5 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
-import NotFoundFile from "@/assets/error404.lottie";
+import NotFoundFile from "@/assets/error404.lottie?url";
 import { useNavigate } from "react-router-dom";
 
 function NotFound() {

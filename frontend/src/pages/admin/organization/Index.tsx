@@ -44,7 +44,6 @@ export default function AdminOrganizationIndexPage() {
   const navigate = useNavigate();
   const [permit, setPermit] = useState(false);
   const [isEditable, setIsEditable] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   const [title, setTitle] = useState("");
   const [subTitle, setSubtitle] = useState("");
@@ -67,7 +66,6 @@ export default function AdminOrganizationIndexPage() {
 
           setPermit(pageData.data.permit.permission);
           setIsEditable(pageData.data.permit.isEditable);
-          setIsAdmin(pageData.data.permit.isAdmin);
         } else {
           toast.error("You don't have permission to access this page");
         }

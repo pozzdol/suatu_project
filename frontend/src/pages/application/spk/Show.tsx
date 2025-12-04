@@ -228,7 +228,7 @@ function SPKShowPage() {
     }
   };
 
-  const status = {
+  const status: Record<string, string> = {
     pending: "Pending",
     in_progress: "On Progress",
     completed: "Completed",
@@ -343,7 +343,7 @@ function SPKShowPage() {
 
         // Row 4: Selesai Produksi / Tebal / PPN
         rows.push([
-          "Status : " + (status[workOrder?.status] || "-"),
+          "Status : " + (workOrder?.status ? status[workOrder.status] : "-"),
           null,
           null, // A-C
           `Tebal : ${workOrder?.thickness || "-"}`,
@@ -593,7 +593,7 @@ function SPKShowPage() {
               </div>
               <div className="flex">
                 <div className="p-1 pl-2 font-medium">Status :</div>
-                <div className="grow p-1">{status[workOrder.status]}</div>
+                <div className="grow p-1">{workOrder.status ? status[workOrder.status] : "-"}</div>
               </div>
             </div>
 

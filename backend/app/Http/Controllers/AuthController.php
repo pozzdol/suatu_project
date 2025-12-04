@@ -94,4 +94,55 @@ class AuthController extends Controller
 
         return $this->apiResponse($user);
     }
+
+    public function changePassword(Request $request)
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'new_password' => ['required', 'string', 'min:6', 'confirmed'],
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            return $this->apiError('Current password is incorrect.', null, 422);
+        }
+
+        if (Hash::check($data['new_password'], $user->password)) {
+            return $this->apiError('New password cannot be the same as current password.', null, 422);
+        }
+
+        $user->password = Hash::make($data['new_password']);
+        $user->save();
+
+        return $this->apiResponse(null, 'Password changed successfully.');
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+        ]);
+
+        if (isset($data['name'])) {
+            $user->name = $data['name'];
+        }
+
+        if (isset($data['email'])) {
+            $user->email = $data['email'];
+        }
+
+        $user->save();
+
+        return $this->apiResponse([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
+        ], 'Profile updated successfully.');
+    }
 }
