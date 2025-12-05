@@ -9,11 +9,17 @@ services:
     restart: unless-stopped
     ports:
       - "8000:80"
-    env_file:
-      - .env.production
+    # env_file:
+    #   - .env.production
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+      - DB_HOST=db  # Harus match dengan nama service database di bawah
+      - DB_CONNECTION=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=${DB_DATABASE} # Value diisi di menu Portainer
+      - DB_USERNAME=${DB_USERNAME} # Value diisi di menu Portainer
+      - DB_PASSWORD=${DB_PASSWORD} # Value diisi di menu Portainer
     volumes:
       - app_storage:/var/www/html/storage
       - app_cache:/var/www/html/bootstrap/cache
@@ -39,11 +45,30 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  db:
+    image: mysql:8.4
+    container_name: wms_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - wms_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
 volumes:
   app_storage:
     driver: local
   app_cache:
     driver: local
+  db_data:
 
 networks:
   wms_network:
