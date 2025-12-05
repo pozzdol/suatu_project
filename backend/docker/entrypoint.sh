@@ -3,6 +3,15 @@ set -e
 
 echo "Starting application setup..."
 
+# --- TAMBAHAN BARU (FIX ERROR .ENV) ---
+if [ ! -f .env ]; then
+    echo "Creating .env file from example..."
+    cp .env.example .env
+fi
+# --------------------------------------
+
+echo "Starting application setup..."
+
 # Wait for database if needed
 if [ -n "$DB_HOST" ]; then
     echo "Waiting for database connection..."
