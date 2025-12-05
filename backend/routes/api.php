@@ -15,7 +15,27 @@ use App\Http\Controllers\RoleWindowController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WindowsController;
 use App\Http\Controllers\WorkOrderController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+
+// Health check endpoint (no auth required)
+Route::get('/health', function () {
+    try {
+        DB::connection()->getPdo();
+        return response()->json([
+            'status' => 'healthy',
+            'database' => 'connected',
+            'timestamp' => now()->toISOString(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'unhealthy',
+            'database' => 'disconnected',
+            'error' => $e->getMessage(),
+            'timestamp' => now()->toISOString(),
+        ], 503);
+    }
+});
 
 // Routes tanpa autentikasi
 Route::post('/login', [AuthController::class, 'login']);
