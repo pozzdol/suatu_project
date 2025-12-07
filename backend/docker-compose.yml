@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   app:
@@ -14,7 +14,7 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
-      - DB_HOST=db  # Harus match dengan nama service database di bawah
+      - DB_HOST=db # Harus match dengan nama service database di bawah
       - DB_CONNECTION=mysql
       - DB_PORT=3306
       - DB_DATABASE=${DB_DATABASE} # Value diisi di menu Portainer
@@ -34,10 +34,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 512M
         reservations:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 128M
     logging:
       driver: "json-file"
@@ -50,7 +50,7 @@ services:
     container_name: wms_db
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3306:3306"
+      - "3306:3306"
     environment:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_USER: ${DB_USERNAME}
