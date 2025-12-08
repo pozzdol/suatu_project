@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # Kirim variable Portainer ke dalam proses Build Dockerfile
+      args:
+        - VITE_APP_NAME=${VITE_APP_NAME}
+        - VITE_API_URL=${VITE_API_URL}
+        - VITE_DEBUG=${VITE_DEBUG}
+    container_name: wms_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80" # Port 3000 di server -> Port 80 container
+    networks:
+      - wms_network
+
+networks:
+  wms_network:
+    external: true
+    name: wms_network # Nebeng network backend yang sudah ada

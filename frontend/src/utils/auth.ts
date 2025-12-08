@@ -160,8 +160,10 @@ export const login = async (
   credentials: LoginCredentials
 ): Promise<LoginResponse> => {
   try {
+    const API_URL = import.meta.env.VITE_API_URL || "/api";
+
     const response = await axios.post<LoginResponse>(
-      "/api/login",
+      `${API_URL}/login`,
       credentials,
       {
         headers: {

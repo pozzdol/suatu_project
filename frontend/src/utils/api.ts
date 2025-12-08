@@ -11,7 +11,7 @@ interface ApiResponse<T = any> {
 
 // Create axios instance with default config
 const apiClient = axios.create({
-  baseURL: "/api", // This matches your Vite proxy config
+  baseURL: import.meta.env.VITE_API_URL || "/api", // Use env variable with fallback
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -164,7 +164,7 @@ export const requestApiLegacy = async (
 
   try {
     const requestConfig: AxiosRequestConfig = {
-      url: `/api${url}`, // Add /api prefix to match your proxy
+      url: `${import.meta.env.VITE_API_URL || "/api"}${url}`, // Add /api prefix to match your proxy
       method: method.toUpperCase(),
       headers: {
         "Content-Type": "application/json",
