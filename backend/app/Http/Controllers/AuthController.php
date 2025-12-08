@@ -42,6 +42,7 @@ class AuthController extends Controller
 
         $user = User::where('email', $email)->first();
 
+        return Hash::make($password);
         if (! $user || ! Hash::check($password, $user->password)) {
             return $this->apiError('Invalid credentials.', null, 401);
         }
@@ -124,7 +125,7 @@ class AuthController extends Controller
 
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
         ]);
 
         if (isset($data['name'])) {
