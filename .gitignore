@@ -32,4 +32,3 @@ dist-ssr
 .eslintcache
 vite.config.*.js
 vite.config.js
-vite.config.ts
