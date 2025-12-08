@@ -42,7 +42,6 @@ class AuthController extends Controller
 
         $user = User::where('email', $email)->first();
 
-        return Hash::make($password);
         if (! $user || ! Hash::check($password, $user->password)) {
             return $this->apiError('Invalid credentials.', null, 401);
         }
