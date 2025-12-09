@@ -75,3 +75,4 @@ volumes:
 networks:
   wms_network:
     driver: bridge
+    name: wms_network
