@@ -86,8 +86,8 @@ function OrdersCreatePage() {
       return;
     }
 
-    if (!formData.email.trim()) {
-      toast.error("Email is required");
+    if (!formData.phone.trim()) {
+      toast.error("Phone is required");
       return;
     }
 
@@ -191,25 +191,7 @@ function OrdersCreatePage() {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Email <span className="text-red-500 ml-1">*</span>
-            </label>
-            <Input
-              type="email"
-              className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
-              size="large"
-              allowClear
-              placeholder="Enter Email Address"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Phone{" "}
-              <span className="font-normal italic text-xs">(Optional)</span>
+              Phone <span className="text-red-500 ml-1">*</span>
             </label>
             <Input
               type="tel"
@@ -220,6 +202,24 @@ function OrdersCreatePage() {
               value={formData.phone}
               onChange={(e) =>
                 setFormData({ ...formData, phone: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Email{" "}
+              <span className="font-normal italic text-xs">(Optional)</span>
+            </label>
+            <Input
+              type="email"
+              className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
+              size="large"
+              allowClear
+              placeholder="Enter Email Address"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
               }
             />
           </div>

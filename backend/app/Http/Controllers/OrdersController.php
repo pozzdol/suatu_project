@@ -40,6 +40,10 @@ class OrdersController extends Controller
                     'email' => $order->email,
                     'phone' => $order->phone,
                     'address' => $order->address,
+                    'finishing' => $order->finishing,
+                    'tebal_plat' => $order->tebal_plat,
+                    'note' => $order->note,
+                    'date_confirm' => $order->date_confirm,
                     'status' => $order->status,
                     'deleted' => $order->deleted,
                     'created_at' => $order->created_at,
@@ -68,9 +72,12 @@ class OrdersController extends Controller
     {
         $rules = [
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255',
-            'phone' => 'nullable|string|max:50',
+            'email' => 'nullable|string|email|max:255',
+            'phone' => 'required|string|max:50',
             'address' => 'nullable|string|max:1000',
+            'finishing' => 'nullable|string|max:255',
+            'tebal_plat' => 'nullable|string|max:50',
+            'note' => 'nullable|string|max:5000',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -101,6 +108,10 @@ class OrdersController extends Controller
                 'email' => $order->email,
                 'phone' => $order->phone,
                 'address' => $order->address,
+                'finishing' => $order->finishing,
+                'tebal_plat' => $order->tebal_plat,
+                'note' => $order->note,
+                'date_confirm' => $order->date_confirm,
                 'status' => $order->status,
                 'deleted' => $order->deleted,
                 'created_at' => $order->created_at,
@@ -132,6 +143,10 @@ class OrdersController extends Controller
                 'email' => $order->email,
                 'phone' => $order->phone,
                 'address' => $order->address,
+                'finishing' => $order->finishing,
+                'tebal_plat' => $order->tebal_plat,
+                'note' => $order->note,
+                'date_confirm' => $order->date_confirm,
                 'status' => $order->status,
                 'deleted' => $order->deleted,
                 'created_at' => $order->created_at,
@@ -168,9 +183,13 @@ class OrdersController extends Controller
 
             $rules = [
                 'name' => 'sometimes|required|string|max:255',
-                'email' => 'sometimes|required|string|email|max:255',
-                'phone' => 'sometimes|nullable|string|max:50',
+                'email' => 'sometimes|nullable|string|email|max:255',
+                'phone' => 'sometimes|required|string|max:50',
                 'address' => 'sometimes|nullable|string|max:1000',
+                'finishing' => 'sometimes|nullable|string|max:255',
+                'tebal_plat' => 'sometimes|nullable|string|max:50',
+                'note' => 'sometimes|nullable|string|max:5000',
+                'date_confirm' => 'sometimes|nullable|date',
                 'status' => 'sometimes|required|string|in:draft,confirm',
                 'orderItems' => 'sometimes|required|array|min:1',
                 'orderItems.*.productId' => 'required|string|exists:product,id',
@@ -188,6 +207,16 @@ class OrdersController extends Controller
             $workOrderDescription = $request->input('work_order_description');
             if ($workOrderDescription === null) {
                 $workOrderDescription = $request->input('workOrderDescription');
+            }
+
+            if (isset($validated['finishing'])) {
+                $order->finishing = $validated['finishing'];
+            }
+            if (isset($validated['tebal_plat'])) {
+                $order->tebal_plat = $validated['tebal_plat'];
+            }
+            if (isset($validated['note'])) {
+                $order->note = $validated['note'];
             }
 
             $originalStatus = $order->status;
@@ -247,6 +276,7 @@ class OrdersController extends Controller
             }
 
             if ($targetStatus === 'confirm') {
+                $order->date_confirm = $validated['date_confirm'] ?? now();
                 $order->load('orderItems.product');
 
                 if ($order->orderItems->isEmpty()) {
@@ -275,7 +305,7 @@ class OrdersController extends Controller
                 $this->createOrRestoreWorkOrder($order, $workOrderDescription);
 
                 // Check and send low stock notification after raw material deducted
-                if (!empty($usedRawMaterialIds)) {
+                if (! empty($usedRawMaterialIds)) {
                     $this->lowStockNotificationService->checkAndNotify($usedRawMaterialIds);
                 }
             }
@@ -295,6 +325,10 @@ class OrdersController extends Controller
                 'email' => $order->email,
                 'phone' => $order->phone,
                 'address' => $order->address,
+                'finishing' => $order->finishing,
+                'tebal_plat' => $order->tebal_plat,
+                'note' => $order->note,
+                'date_confirm' => $order->date_confirm,
                 'status' => $order->status,
                 'deleted' => $order->deleted,
                 'created_at' => $order->created_at,
@@ -573,6 +607,7 @@ class OrdersController extends Controller
 
     /**
      * Proses penggunaan raw material: kurangi stock dan catat history
+     *
      * @return array Array of raw material IDs that were used
      */
     private function processRawMaterialUsage(Order $order): array
@@ -606,7 +641,7 @@ class OrdersController extends Controller
                     ]);
 
                     // Collect used raw material IDs
-                    if (!in_array($rawMaterialId, $usedRawMaterialIds)) {
+                    if (! in_array($rawMaterialId, $usedRawMaterialIds)) {
                         $usedRawMaterialIds[] = $rawMaterialId;
                     }
                 }

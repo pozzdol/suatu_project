@@ -22,6 +22,10 @@ interface FormData {
   phone: string;
   email: string;
   status: string;
+  finishing?: string;
+  tebal_plat?: number;
+  note?: string;
+  date_confirm?: string;
   orderItems: OrderItem[];
 }
 
@@ -99,6 +103,12 @@ function OrdersEditPage() {
           phone: order.phone || "",
           email: order.email || "",
           status: order.status || "draft",
+          finishing: order.finishing || "",
+          tebal_plat: order.tebal_plat
+            ? parseFloat(order.tebal_plat)
+            : undefined,
+          note: order.note || "",
+          date_confirm: order.date_confirm || "",
           orderItems: order.orderItems.map((item: any) => ({
             productId: item.productId,
             quantity: item.quantity,
@@ -110,6 +120,12 @@ function OrdersEditPage() {
           phone: order.phone || "",
           email: order.email || "",
           status: order.status || "draft",
+          finishing: order.finishing || "",
+          tebal_plat: order.tebal_plat
+            ? parseFloat(order.tebal_plat)
+            : undefined,
+          note: order.note || "",
+          date_confirm: order.date_confirm || "",
           orderItems: order.orderItems.map((item: any) => ({
             productId: item.productId,
             quantity: item.quantity,
@@ -229,6 +245,22 @@ function OrdersEditPage() {
 
     if (formData.phone.trim()) {
       normalizedFormData.phone = formData.phone.trim();
+    }
+
+    if (formData.finishing?.trim()) {
+      normalizedFormData.finishing = formData.finishing.trim();
+    }
+
+    if (formData.tebal_plat) {
+      normalizedFormData.tebal_plat = formData.tebal_plat;
+    }
+
+    if (formData.note?.trim()) {
+      normalizedFormData.note = formData.note.trim();
+    }
+
+    if (formData.date_confirm?.trim()) {
+      normalizedFormData.date_confirm = formData.date_confirm.trim();
     }
 
     setSubmitting(true);
@@ -389,6 +421,82 @@ function OrdersEditPage() {
                   { label: "Draft", value: "draft" },
                   { label: "Confirm", value: "confirm" },
                 ]}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Finishing{" "}
+                <span className="font-normal italic text-xs">(Optional)</span>
+              </label>
+              <Input
+                type="text"
+                className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
+                size="large"
+                allowClear
+                placeholder="Enter Finishing Type"
+                value={formData.finishing || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, finishing: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Tebal Plat{" "}
+                <span className="font-normal italic text-xs">(Optional)</span>
+              </label>
+              <InputNumber
+                className="mt-1 block w-full!"
+                size="large"
+                placeholder="Enter Tebal Plat"
+                step={0.01}
+                value={formData.tebal_plat}
+                onChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    tebal_plat: value
+                      ? parseFloat(value.toString())
+                      : undefined,
+                  })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Date Confirm{" "}
+                <span className="font-normal italic text-xs">(Optional)</span>
+              </label>
+              <Input
+                type="date"
+                className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
+                size="large"
+                placeholder="Select Date"
+                value={formData.date_confirm || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, date_confirm: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Note{" "}
+                <span className="font-normal italic text-xs">(Optional)</span>
+              </label>
+              <Input.TextArea
+                rows={4}
+                className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
+                size="large"
+                placeholder="Enter Note"
+                value={formData.note || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, note: e.target.value })
+                }
               />
             </div>
           </div>

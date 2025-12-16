@@ -29,13 +29,18 @@ class Order extends Model
         'email',
         'phone',
         'address',
+        'finishing',
+        'tebal_plat',
+        'note',
         'status',
+        'date_confirm',
         'deleted',
     ];
 
     protected $casts = [
         'deleted' => 'array',
         'deleted_at' => 'datetime',
+        'date_confirm' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
