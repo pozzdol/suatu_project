@@ -70,9 +70,11 @@ function Login() {
     <div className="bg-linear-to-br from-background to-white min-h-screen flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-lg w-[80%] max-w-md">
         <div className="mb-4">
-          <img src={logoApp} alt="Logo" className="mx-auto w-24 h-24" />
-          <h2 className="text-2xl md:text-4xl mb-2 font-medium text-slate-900 text-center">
-            Welcome Back
+          <img src={logoApp} alt="Logo" className="mx-auto w-24 h-24 mb-2" />
+          <h2 className="text-2xl md:text-3xl mb-2 font-medium text-slate-900 text-center">
+            PT ANUGERAH HUTAMA
+            <br />
+            MANDIRI PERKASA
           </h2>
           <p className="text-center text-slate-600 leading-5 text-sm md:text-base">
             Happy to see you again👋🏼 <br /> Login to your account bellow

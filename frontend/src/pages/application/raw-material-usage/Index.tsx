@@ -9,15 +9,21 @@ import Table, { type HeaderType } from "@/components/Table";
 import FormButtons from "@/components/FormButtons";
 import { parseNumericFilter } from "@/utils/filterOperators";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
-import { Modal, Input, InputNumber, AutoComplete } from "antd";
+import { Modal, InputNumber, Select } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
 
-type RawMaterialData = Record<string, unknown> & {
+type RawMaterialUsageData = Record<string, unknown> & {
   id: string;
-  name: string;
-  stock: number;
-  unit?: string;
-  lowerLimit?: number;
+  orderId?: string;
+  orderItemId?: string;
+  productId?: string;
+  productName: string;
+  rawMaterialId: string;
+  rawMaterialName: string;
+  quantityUsed: number;
+  unit: string;
+  created_at: string;
 };
 
 interface TableHeader {
@@ -40,7 +46,7 @@ interface TableHeader {
   stickyPosition?: number;
 }
 
-function RawMaterialIndexPage() {
+function RawMaterialUsageIndexPage() {
   // PAGE LOAD
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
@@ -53,7 +59,7 @@ function RawMaterialIndexPage() {
       try {
         setLoading(true);
         const pageData = await validatePermit(
-          "d879eecc4b274471bbc06576688c84b2"
+          "078e840cc86e4074954c123f87ad08b4"
         );
 
         if (pageData && pageData.success && pageData.data.permit.permission) {
@@ -76,25 +82,34 @@ function RawMaterialIndexPage() {
     initializePage();
   }, []);
 
-  useDocumentTitle(title || "Raw Material");
+  useDocumentTitle(title || "Raw Material Usage");
   // -- PAGE LOAD END --
 
   // STATE MANAGEMENT
-  const [data, setData] = useState<RawMaterialData[]>([]);
+  const [data, setData] = useState<RawMaterialUsageData[]>([]);
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [pendingDeleteIds, setPendingDeleteIds] = useState<string[]>([]);
   const [deleting, setDeleting] = useState(false);
+
+  // Dropdown data
+  const [orders, setOrders] = useState<{ label: string; value: string }[]>([]);
+  const [products, setProducts] = useState<{ label: string; value: string }[]>(
+    []
+  );
+  const [rawMaterials, setRawMaterials] = useState<
+    { label: string; value: string; unit?: string }[]
+  >([]);
 
   // Modal state
   const [formModalVisible, setFormModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    stock: 0,
-    unit: "pcs",
-    lowerLimit: 0,
+    order_id: "",
+    product_id: "",
+    raw_material_id: "",
+    quantity_used: 0,
   });
   // STATE MANAGEMENT END
 
@@ -103,18 +118,68 @@ function RawMaterialIndexPage() {
     setLoading(true);
     try {
       const response = await requestApi.get(
+        "/transactions/raw-material-usage/list"
+      );
+      if (response && response.data.success) {
+        setData(response.data.data.rawMaterialUsages);
+      } else {
+        toast.error("Failed to fetch raw material usage data");
+      }
+    } catch (error) {
+      console.error("Failed to fetch raw material usage data:", error);
+      toast.error("Failed to fetch raw material usage data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const response = await requestApi.get("/transactions/work-orders/list");
+      if (response && response.data.success) {
+        const orderList = response.data.data.workOrders.map((order: any) => ({
+          label: `${order.noSurat} - ${order.orderName}`,
+          value: order.orderId,
+        }));
+        setOrders(orderList);
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const response = await requestApi.get("/general/setup/products/list");
+      if (response && response.data.success) {
+        const productList = response.data.data.products.map((product: any) => ({
+          label: product.name,
+          value: product.id,
+        }));
+        setProducts(productList);
+      }
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+    }
+  };
+
+  const fetchRawMaterials = async () => {
+    try {
+      const response = await requestApi.get(
         "/general/setup/raw-materials/list"
       );
       if (response && response.data.success) {
-        setData(response.data.data.rawMaterials);
-      } else {
-        toast.error("Failed to fetch raw material data");
+        const materials = response.data.data.rawMaterials.map(
+          (material: any) => ({
+            label: material.name,
+            value: material.id,
+            unit: material.unit || "pcs",
+          })
+        );
+        setRawMaterials(materials);
       }
     } catch (error) {
-      console.error("Failed to fetch raw material data:", error);
-      toast.error("Failed to fetch raw material data");
-    } finally {
-      setLoading(false);
+      console.error("Failed to fetch raw materials:", error);
     }
   };
   // FETCH DATA END
@@ -123,6 +188,9 @@ function RawMaterialIndexPage() {
   useEffect(() => {
     if (permit) {
       fetchData();
+      fetchOrders();
+      fetchProducts();
+      fetchRawMaterials();
     }
   }, [permit]);
   // EFFECTS END
@@ -134,17 +202,25 @@ function RawMaterialIndexPage() {
       return;
     }
     setEditingId(null);
-    setFormData({ name: "", stock: 0, unit: "pcs", lowerLimit: 0 });
+    setFormData({
+      order_id: "",
+      product_id: "",
+      raw_material_id: "",
+      quantity_used: 0,
+    });
     setFormModalVisible(true);
   };
 
-  const handleEdit = (row: RawMaterialData) => {
+  const handleEdit = (row: RawMaterialUsageData) => {
     setEditingId(row.id);
     setFormData({
-      name: String(row.name),
-      stock: typeof row.stock === "number" ? row.stock : 0,
-      unit: row.unit || "pcs",
-      lowerLimit: typeof row.lowerLimit === "number" ? row.lowerLimit : 0,
+      order_id: row.orderId || "",
+      product_id: row.productId || "",
+      raw_material_id: row.rawMaterialId || "",
+      quantity_used:
+        typeof row.quantityUsed === "number"
+          ? row.quantityUsed
+          : parseFloat(String(row.quantityUsed)) || 0,
     });
     setFormModalVisible(true);
   };
@@ -153,13 +229,23 @@ function RawMaterialIndexPage() {
     if (!formSubmitting) {
       setFormModalVisible(false);
       setEditingId(null);
-      setFormData({ name: "", stock: 0, unit: "pcs", lowerLimit: 0 });
+      setFormData({
+        order_id: "",
+        product_id: "",
+        raw_material_id: "",
+        quantity_used: 0,
+      });
     }
   };
 
   const handleFormSubmit = async () => {
-    if (!formData.name.trim()) {
-      toast.error("Name is required");
+    if (!formData.raw_material_id) {
+      toast.error("Raw material is required");
+      return;
+    }
+
+    if (!formData.quantity_used || formData.quantity_used <= 0) {
+      toast.error("Quantity used must be greater than 0");
       return;
     }
 
@@ -170,41 +256,58 @@ function RawMaterialIndexPage() {
 
     setFormSubmitting(true);
     try {
+      const payload = {
+        order_id: formData.order_id || null,
+        product_id: formData.product_id || null,
+        raw_material_id: formData.raw_material_id,
+        quantity_used: formData.quantity_used,
+      };
+
       if (editingId) {
         // Update
         const response = await requestApi.put(
-          `/general/setup/raw-materials/edit/${editingId}`,
-          formData
+          `/transactions/raw-material-usage/edit/${editingId}`,
+          payload
         );
         if (response && response.data.success) {
-          toast.success("Raw material updated successfully");
+          toast.success("Raw material usage updated successfully");
           fetchData();
           setFormModalVisible(false);
           setEditingId(null);
-          setFormData({ name: "", stock: 0, unit: "pcs", lowerLimit: 0 });
+          setFormData({
+            order_id: "",
+            product_id: "",
+            raw_material_id: "",
+            quantity_used: 0,
+          });
         } else {
-          toast.error("Failed to update raw material");
+          toast.error("Failed to update raw material usage");
         }
       } else {
         // Create
         const response = await requestApi.post(
-          "/general/setup/raw-materials",
-          formData
+          "/transactions/raw-material-usage",
+          payload
         );
         if (response && response.data.success) {
-          toast.success("Raw material created successfully");
+          toast.success("Raw material usage created successfully");
           fetchData();
           setFormModalVisible(false);
-          setFormData({ name: "", stock: 0, unit: "pcs", lowerLimit: 0 });
+          setFormData({
+            order_id: "",
+            product_id: "",
+            raw_material_id: "",
+            quantity_used: 0,
+          });
         } else {
-          toast.error("Failed to create raw material");
+          toast.error("Failed to create raw material usage");
         }
       }
     } catch (error) {
       toast.error(
         editingId
-          ? "Failed to update raw material"
-          : "Failed to create raw material"
+          ? "Failed to update raw material usage"
+          : "Failed to create raw material usage"
       );
       console.error("Form error:", error);
     } finally {
@@ -216,7 +319,7 @@ function RawMaterialIndexPage() {
     fetchData();
   };
 
-  const handleDetail = (row: RawMaterialData) => {
+  const handleDetail = (row: RawMaterialUsageData) => {
     handleEdit(row);
   };
 
@@ -240,7 +343,7 @@ function RawMaterialIndexPage() {
 
     try {
       const response = await requestApi.post(
-        "/general/setup/raw-materials/mass-delete",
+        "/transactions/raw-material-usage/mass-delete",
         {
           ids: pendingDeleteIds,
         }
@@ -271,6 +374,13 @@ function RawMaterialIndexPage() {
       setPendingDeleteIds([]);
     }
   };
+
+  const getSelectedMaterialUnit = () => {
+    const material = rawMaterials.find(
+      (m) => m.value === formData.raw_material_id
+    );
+    return material?.unit || "pcs";
+  };
   // FUNCTIONS END
 
   // TABLE HEADERS
@@ -287,18 +397,26 @@ function RawMaterialIndexPage() {
         showOnMobile: true,
       },
       {
-        label: "Name",
-        field: "name",
+        label: "Product",
+        field: "productName",
         type: "text" as HeaderType,
         showOnMobile: true,
         exportable: true,
       },
       {
-        label: "Stock",
-        field: "stock",
+        label: "Raw Material",
+        field: "rawMaterialName",
         type: "text" as HeaderType,
         showOnMobile: true,
         exportable: true,
+      },
+      {
+        label: "Quantity Used",
+        field: "quantityUsed",
+        type: "text" as HeaderType,
+        showOnMobile: true,
+        exportable: true,
+        isNumeric: true,
       },
       {
         label: "Unit",
@@ -308,12 +426,11 @@ function RawMaterialIndexPage() {
         exportable: true,
       },
       {
-        label: "Lower Limit",
-        field: "lowerLimit",
+        label: "Date",
+        field: "created_at",
         type: "text" as HeaderType,
         showOnMobile: true,
         exportable: true,
-        isNumeric: true,
       },
     ],
     []
@@ -346,7 +463,7 @@ function RawMaterialIndexPage() {
   const filteredData = useMemo(() => {
     const source = data;
     return (
-      source?.filter((item: RawMaterialData) => {
+      source?.filter((item: RawMaterialUsageData) => {
         return headers.every((header) => {
           const filterValue = filters[header.field];
           const itemValue = item[header.field] as unknown;
@@ -408,7 +525,7 @@ function RawMaterialIndexPage() {
         onDelete={() => handleMassDelete(selectedRows)}
         tableData={filteredData}
         tableHeaders={headers.map((h) => ({ label: h.label, field: h.field }))}
-        fileName="raw_material_data"
+        fileName="raw_material_usage_data"
         disabled={!isEditable}
       />
       <Table
@@ -421,12 +538,12 @@ function RawMaterialIndexPage() {
         setFilters={setFilters}
         handleResetFilters={handleResetFilters}
         filteredData={filteredData}
-        itemsPerPage={5}
+        itemsPerPage={10}
         isCheckboxEnabled={true}
         onSelectionChange={setSelectedRows}
         isSortEnabled={true}
         isMultiSortEnabled={false}
-        defaultSorts={[{ field: "name", order: "asc", priority: 0 }]}
+        defaultSorts={[{ field: "created_at", order: "desc", priority: 0 }]}
         renderRow={(row) => {
           return (
             <>
@@ -440,34 +557,19 @@ function RawMaterialIndexPage() {
                 </button>
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                <div className="flex items-center gap-2">
-                  {typeof row.lowerLimit === "number" &&
-                    row.stock < row.lowerLimit && (
-                      <span
-                        className="text-red-500"
-                        title="Stock below lower limit"
-                      >
-                        ⚠️
-                      </span>
-                    )}
-                  <span>{row.name}</span>
-                </div>
+                {row.productName || "-"}
               </td>
-              <td
-                className={`py-2 px-4 w-fit text-xs font-mono border-b border-gray-300 ${
-                  typeof row.lowerLimit === "number" &&
-                  row.stock < row.lowerLimit
-                    ? "text-red-600 font-semibold"
-                    : "text-gray-500"
-                }`}
-              >
-                {row.stock}
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.rawMaterialName}
+              </td>
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300 text-right">
+                {parseFloat(String(row.quantityUsed)).toFixed(2)}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
                 {row.unit || "pcs"}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
-                {typeof row.lowerLimit === "number" ? row.lowerLimit : "-"}
+                {dayjs(row.created_at).format("DD MMM YYYY - HH:mm")}
               </td>
             </>
           );
@@ -541,8 +643,8 @@ function RawMaterialIndexPage() {
                   This action cannot be undone
                 </p>
                 <p className="text-red-700 text-sm leading-relaxed">
-                  The selected raw material records will be permanently removed
-                  from the system.
+                  The selected raw material usage records will be permanently
+                  removed from the system.
                 </p>
               </div>
             </div>
@@ -555,7 +657,7 @@ function RawMaterialIndexPage() {
       <Modal
         title={
           <div className="text-lg font-semibold text-gray-900">
-            {editingId ? "Edit Raw Material" : "Add Raw Material"}
+            {editingId ? "Edit Raw Material Usage" : "Add Raw Material Usage"}
           </div>
         }
         open={formModalVisible}
@@ -600,101 +702,106 @@ function RawMaterialIndexPage() {
         <div className="space-y-6">
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-900">
-              Material Name <span className="text-red-500">*</span>
+              Order <span className="text-gray-400">(Optional)</span>
             </label>
             <div className="relative">
-              <Input
-                placeholder="Enter raw material name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
+              <Select
+                placeholder="Select order"
+                value={formData.order_id || undefined}
+                onChange={(value) =>
+                  setFormData({ ...formData, order_id: value })
                 }
                 disabled={formSubmitting}
+                options={orders}
+                className="w-full"
                 size="large"
                 allowClear
-                className="text-gray-900!"
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label ?? "")
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              The unique name for this raw material
+              Link this usage to a specific order (optional)
             </p>
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-gray-900">
-              Stock Quantity
+              Product <span className="text-gray-400">(Optional)</span>
+            </label>
+            <div className="relative">
+              <Select
+                placeholder="Select product"
+                value={formData.product_id || undefined}
+                onChange={(value) =>
+                  setFormData({ ...formData, product_id: value })
+                }
+                disabled={formSubmitting}
+                options={products}
+                className="w-full"
+                size="large"
+                allowClear
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Link this usage to a specific product (optional)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-900">
+              Raw Material <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Select
+                placeholder="Select raw material"
+                value={formData.raw_material_id || undefined}
+                onChange={(value) =>
+                  setFormData({ ...formData, raw_material_id: value })
+                }
+                disabled={formSubmitting}
+                options={rawMaterials}
+                className="w-full"
+                size="large"
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label ?? "")
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Select the raw material that was used
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-gray-900">
+              Quantity Used <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <InputNumber
-                placeholder="0"
-                value={formData.stock}
+                placeholder="0.00"
+                value={formData.quantity_used}
                 onChange={(value) =>
-                  setFormData({ ...formData, stock: value || 0 })
+                  setFormData({ ...formData, quantity_used: value || 0 })
                 }
                 disabled={formSubmitting}
                 size="large"
                 className="text-gray-900! w-full!"
-                min={0}
+                min={0.01}
                 step={0.01}
                 precision={2}
+                addonAfter={getSelectedMaterialUnit()}
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">
-              Current available stock (cannot be negative)
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-900">
-              Unit <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <AutoComplete
-                placeholder="Select or type unit"
-                value={formData.unit}
-                onChange={(value) => setFormData({ ...formData, unit: value })}
-                options={[
-                  { value: "pcs" },
-                  { value: "mm" },
-                  { value: "meter" },
-                  { value: "kg" },
-                  { value: "liter" },
-                ]}
-                disabled={formSubmitting}
-                size="large"
-                className="text-gray-900! w-full!"
-                filterOption={(inputValue, option) =>
-                  option!.value.toLowerCase().includes(inputValue.toLowerCase())
-                }
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Measurement unit for this material
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-gray-900">
-              Lower Limit
-            </label>
-            <div className="relative">
-              <InputNumber
-                placeholder="0"
-                value={formData.lowerLimit}
-                onChange={(value) =>
-                  setFormData({ ...formData, lowerLimit: value || 0 })
-                }
-                disabled={formSubmitting}
-                size="large"
-                className="text-gray-900! w-full!"
-                min={0}
-                step={0.01}
-                precision={2}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Alert threshold - you'll be warned when stock falls below this
-              level
+              Amount of raw material consumed (minimum 0.01)
             </p>
           </div>
         </div>
@@ -704,4 +811,4 @@ function RawMaterialIndexPage() {
   );
 }
 
-export default RawMaterialIndexPage;
+export default RawMaterialUsageIndexPage;

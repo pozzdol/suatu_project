@@ -7,7 +7,8 @@ import { validatePermit } from "@/utils/validation";
 import Loading from "@/components/Loading";
 import Permit from "@/components/Permit";
 import { ArrowCircleLeftIcon, CircleNotchIcon } from "@phosphor-icons/react";
-import { Input, Select, InputNumber, Button } from "antd";
+import { Input, Select, InputNumber, Button, DatePicker } from "antd";
+import dayjs from "dayjs";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
 
@@ -23,7 +24,7 @@ interface FormData {
   email: string;
   status: string;
   finishing?: string;
-  tebal_plat?: number;
+  thickness?: number;
   note?: string;
   date_confirm?: string;
   orderItems: OrderItem[];
@@ -104,9 +105,7 @@ function OrdersEditPage() {
           email: order.email || "",
           status: order.status || "draft",
           finishing: order.finishing || "",
-          tebal_plat: order.tebal_plat
-            ? parseFloat(order.tebal_plat)
-            : undefined,
+          thickness: order.thickness ? parseFloat(order.thickness) : undefined,
           note: order.note || "",
           date_confirm: order.date_confirm || "",
           orderItems: order.orderItems.map((item: any) => ({
@@ -121,9 +120,7 @@ function OrdersEditPage() {
           email: order.email || "",
           status: order.status || "draft",
           finishing: order.finishing || "",
-          tebal_plat: order.tebal_plat
-            ? parseFloat(order.tebal_plat)
-            : undefined,
+          thickness: order.thickness ? parseFloat(order.thickness) : undefined,
           note: order.note || "",
           date_confirm: order.date_confirm || "",
           orderItems: order.orderItems.map((item: any) => ({
@@ -215,16 +212,13 @@ function OrdersEditPage() {
       return;
     }
 
-    if (!formData.email.trim()) {
-      toast.error("Email is required");
-      return;
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email.trim())) {
-      toast.error("Please enter a valid email address");
-      return;
+    if (formData.email.trim()) {
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
     }
 
     const normalizedFormData: Record<string, any> = {
@@ -251,8 +245,8 @@ function OrdersEditPage() {
       normalizedFormData.finishing = formData.finishing.trim();
     }
 
-    if (formData.tebal_plat) {
-      normalizedFormData.tebal_plat = formData.tebal_plat;
+    if (formData.thickness) {
+      normalizedFormData.thickness = `${formData.thickness.toString()} mm`;
     }
 
     if (formData.note?.trim()) {
@@ -342,25 +336,7 @@ function OrdersEditPage() {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Email <span className="text-red-500 ml-1">*</span>
-            </label>
-            <Input
-              type="email"
-              className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
-              size="large"
-              allowClear
-              placeholder="Enter Email Address"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Phone{" "}
-              <span className="font-normal italic text-xs">(Optional)</span>
+              Phone <span className="text-red-500 ml-1">*</span>
             </label>
             <Input
               type="tel"
@@ -371,6 +347,24 @@ function OrdersEditPage() {
               value={formData.phone}
               onChange={(e) =>
                 setFormData({ ...formData, phone: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Email{" "}
+              <span className="font-normal italic text-xs">(Optional)</span>
+            </label>
+            <Input
+              type="email"
+              className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
+              size="large"
+              allowClear
+              placeholder="Enter Email Address"
+              value={formData.email}
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
               }
             />
           </div>
@@ -446,21 +440,20 @@ function OrdersEditPage() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                Tebal Plat{" "}
+                Thickness{" "}
                 <span className="font-normal italic text-xs">(Optional)</span>
               </label>
               <InputNumber
                 className="mt-1 block w-full!"
                 size="large"
-                placeholder="Enter Tebal Plat"
+                placeholder="Enter Thickness"
                 step={0.01}
-                value={formData.tebal_plat}
+                value={formData.thickness}
+                suffix="mm"
                 onChange={(value) =>
                   setFormData({
                     ...formData,
-                    tebal_plat: value
-                      ? parseFloat(value.toString())
-                      : undefined,
+                    thickness: value ? parseFloat(value.toString()) : undefined,
                   })
                 }
               />
@@ -471,14 +464,18 @@ function OrdersEditPage() {
                 Date Confirm{" "}
                 <span className="font-normal italic text-xs">(Optional)</span>
               </label>
-              <Input
-                type="date"
+              <DatePicker
                 className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
                 size="large"
                 placeholder="Select Date"
-                value={formData.date_confirm || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, date_confirm: e.target.value })
+                value={
+                  formData.date_confirm ? dayjs(formData.date_confirm) : null
+                }
+                onChange={(date) =>
+                  setFormData({
+                    ...formData,
+                    date_confirm: date ? date.format("YYYY-MM-DD") : "",
+                  })
                 }
               />
             </div>

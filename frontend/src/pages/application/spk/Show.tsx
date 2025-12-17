@@ -24,6 +24,24 @@ type WorkOrderItem = {
   unit?: string;
 };
 
+type DeliveryOrderItem = {
+  id: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  unit?: string | null;
+};
+
+type DeliveryOrder = {
+  id: string;
+  orderCode: string;
+  plannedDeliveryDate?: string | null;
+  status: string;
+  items: DeliveryOrderItem[];
+  shippedAt?: string | null;
+  createdAt: string;
+};
+
 type WorkOrderDetail = {
   id: string;
   noSurat: string;
@@ -36,6 +54,8 @@ type WorkOrderDetail = {
   finishing?: string;
   thickness?: string;
   project?: string;
+  note?: string;
+  deliveryOrders?: DeliveryOrder[];
 };
 
 function SPKShowPage() {
@@ -106,6 +126,9 @@ function SPKShowPage() {
           orderEmail:
             order.orderEmail || order.order_email || "unknown@email.com",
           status: order.status || "pending",
+          finishing: order.finishing || "HDG",
+          thickness: order.thickness || "1,5MM",
+          note: order.note || "-",
           confirmedAt: order.updated_at || order.confirmedAt || null,
           createdAt: order.created_at || order.createdAt || null,
           items:
@@ -114,9 +137,24 @@ function SPKShowPage() {
               quantity: item.quantity ?? 0,
               unit: item.unit || "PCS",
             })) || [],
-          finishing: "HDG",
-          thickness: "1,5MM",
           project: "-",
+          deliveryOrders:
+            order.deliveryOrders?.map((delivery: any) => ({
+              id: delivery.id,
+              orderCode: delivery.orderCode,
+              plannedDeliveryDate: delivery.plannedDeliveryDate,
+              status: delivery.status,
+              items:
+                delivery.items?.map((item: any) => ({
+                  id: item.id,
+                  productId: item.productId,
+                  productName: item.productName,
+                  quantity: item.quantity,
+                  unit: item.unit,
+                })) || [],
+              shippedAt: delivery.shippedAt,
+              createdAt: delivery.createdAt,
+            })) || [],
         };
 
         setWorkOrder(mappedOrder);
@@ -297,13 +335,9 @@ function SPKShowPage() {
         pdf.save(`SPK-${workOrder?.noSurat || id}.pdf`);
         toast.success("PDF downloaded successfully");
       } else {
-        // --- LOGIKA EXCEL BARU (MIRIP LAYOUT PDF) ---
+        // --- LOGIKA EXCEL DENGAN STYLING LENGKAP ---
 
-        // 1. Buat Workbook
         const wb = XLSX.utils.book_new();
-
-        // 2. Siapkan Data Row-by-Row (Array of Arrays)
-        // Kita butuh 11 Kolom: No(A), Uraian(B), Jumlah(C), Kirim(D-J [7 kolom]), Ket(K)
         const rows: (string | null)[][] = [];
 
         // Row 1: Judul Besar
@@ -311,53 +345,53 @@ function SPKShowPage() {
           `FILE SPK DAN PENGIRIMAN NO : ${workOrder?.noSurat || "-"}`,
         ]);
 
-        // Row 2: TGL / Proyek / PPN (Header Kiri, Tengah, Kanan)
+        // Row 2: TGL / Proyek / PPN
         rows.push([
           `TGL : ${formatDateSimple(workOrder?.createdAt)}`,
           null,
-          null, // A-C
+          null,
           `Proyek : ${workOrder?.project || "-"}`,
           null,
           null,
-          null, // D-G
+          null,
           "PPN",
           null,
           null,
-          null, // H-K
+          null,
         ]);
 
-        // Row 3: CUST / Finishing / PPN (lanjutan merge)
+        // Row 3: CUST / Finishing
         rows.push([
           `CUST : ${workOrder?.orderName?.toUpperCase() || "-"}`,
           null,
-          null, // A-C
+          null,
           `Finishing : ${workOrder?.finishing || "-"}`,
           null,
           null,
-          null, // D-G
           null,
           null,
           null,
-          null, // H-K (Merged dengan atas)
+          null,
+          null,
         ]);
 
-        // Row 4: Selesai Produksi / Tebal / PPN
+        // Row 4: Status / Tebal
         rows.push([
           "Status : " + (workOrder?.status ? status[workOrder.status] : "-"),
           null,
-          null, // A-C
+          null,
           `Tebal : ${workOrder?.thickness || "-"}`,
           null,
           null,
-          null, // D-G
           null,
           null,
           null,
-          null, // H-K
+          null,
+          null,
         ]);
 
         // Row 5: Header Tabel
-        const tableHeader = [
+        rows.push([
           "No",
           "Uraian",
           "Jumlah",
@@ -367,148 +401,165 @@ function SPKShowPage() {
           "Kirim",
           "Kirim",
           "Kirim",
-          "Kirim", // 7 Kolom Kirim
+          "Kirim",
           "KETERANGAN",
-        ];
-        rows.push(tableHeader);
+        ]);
 
         // Row 6+: Isi Item
-        const minRows = 15; // Minimal baris agar tabel terlihat panjang ke bawah
+        const minRows = 15;
         const items = workOrder?.items || [];
 
-        // Masukkan item
         items.forEach((item, i) => {
+          // Find delivery quantities for this product
+          const deliveryQuantities =
+            workOrder?.deliveryOrders?.map((delivery) => {
+              const deliveryItem = delivery.items.find(
+                (dItem) => dItem.productName === item.productName
+              );
+              return deliveryItem?.quantity || 0;
+            }) || [];
+
           rows.push([
             (i + 1).toString(),
             item.productName,
             `${item.quantity} ${item.unit || "PCS"}`,
+            deliveryQuantities[0] ? deliveryQuantities[0].toString() : "",
+            deliveryQuantities[1] ? deliveryQuantities[1].toString() : "",
+            deliveryQuantities[2] ? deliveryQuantities[2].toString() : "",
+            deliveryQuantities[3] ? deliveryQuantities[3].toString() : "",
+            deliveryQuantities[4] ? deliveryQuantities[4].toString() : "",
+            deliveryQuantities[5] ? deliveryQuantities[5].toString() : "",
+            deliveryQuantities[6] ? deliveryQuantities[6].toString() : "",
             "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "", // 7 kolom kirim kosong
-            "", // Keterangan
           ]);
         });
 
-        // Tambahkan baris kosong untuk mengisi sisa halaman (Padding)
+        // Tambahkan baris kosong untuk padding
         const remainingRows = minRows - items.length;
         for (let i = 0; i < remainingRows; i++) {
           rows.push(["", "", "", "", "", "", "", "", "", "", ""]);
         }
 
-        // Row Footer: Note & Signature
-        // Baris Header Tanda Tangan
+        // Row Footer: NOTE & Signature
         rows.push([
-          "NOTE",
+          "NOTE", // Kolom A: Label NOTE
+          workOrder?.note || "-", // Kolom B-G: Isi NOTE (akan di-merge)
           "",
           "",
           "",
           "",
           "",
-          "", // Kolom Note (Merged A-G)
-          "Adm", // H
+          "Adm",
           "Check By",
-          null, // I-J
-          "PPIC", // K
+          null,
+          "PPIC",
         ]);
 
-        // Baris Isi Tanda Tangan (Space kosong vertikal)
-        // Kita buat 3 baris kosong untuk tanda tangan
+        // Baris Signature (3 baris kosong)
         for (let k = 0; k < 3; k++) {
-          rows.push([
-            "",
-            "",
-            "",
-            "",
-            "",
-            "",
-            "", // Note content area
-            "", // Adm box
-            "",
-            "", // Check by box
-            "", // PPIC box
-          ]);
+          rows.push(["", "", "", "", "", "", "", "", "", "", ""]);
         }
 
-        // 2. Buat Worksheet
+        // Buat Worksheet
         const ws = XLSX.utils.aoa_to_sheet(rows);
 
-        // 3. Konfigurasi Lebar Kolom (WCH = Width Character)
+        // Konfigurasi Lebar Kolom
         ws["!cols"] = [
-          { wch: 5 }, // A: No
-          { wch: 35 }, // B: Uraian (Lebar)
-          { wch: 15 }, // C: Jumlah
-          { wch: 6 },
-          { wch: 6 },
-          { wch: 6 },
-          { wch: 6 },
-          { wch: 6 },
-          { wch: 6 },
-          { wch: 6 }, // D-J: Kirim (Kecil)
+          { wch: 8 }, // A: NOTE Label (lebih sempit)
+          { wch: 30 }, // B: Isi NOTE (lebih lebar)
+          { wch: 8 },
+          { wch: 8 },
+          { wch: 8 },
+          { wch: 8 },
+          { wch: 8 },
+          { wch: 8 },
+          { wch: 8 },
+          { wch: 8 },
           { wch: 20 }, // K: Keterangan
         ];
 
-        // 4. Konfigurasi MERGE CELLS (Gabungan Sel)
-        // Format: { s: {r: barisAwal, c: kolomAwal}, e: {r: barisAkhir, c: kolomAkhir} }
-        // Ingat: Index dimulai dari 0 (A=0, Row1=0)
+        // Konfigurasi Height Baris
+        ws["!rows"] = [
+          { hpx: 25 }, // Row 1: Judul (lebih tinggi)
+          { hpx: 18 }, // Row 2-4: Header info
+          { hpx: 18 },
+          { hpx: 18 },
+          { hpx: 22 }, // Row 5: Header tabel
+          ...Array(minRows).fill({ hpx: 20 }), // Baris item
+          { hpx: 20 }, // Footer header
+          ...Array(3).fill({ hpx: 35 }), // Signature area
+        ];
 
+        // Merge Cells
         ws["!merges"] = [
-          // Row 1: Judul Utama (A1:K1)
-          { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } },
-
-          // Row 2: Header Kiri (A2:C2), Tengah (D2:G2), Kanan (H2:K4 - PPN Besar)
+          // Header
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }, // Judul
           { s: { r: 1, c: 0 }, e: { r: 1, c: 2 } }, // TGL
           { s: { r: 1, c: 3 }, e: { r: 1, c: 6 } }, // Proyek
-          { s: { r: 1, c: 7 }, e: { r: 3, c: 10 } }, // PPN BOX BESAR (Merge ke bawah sampai row 4)
-
-          // Row 3: Header Kiri (A3:C3), Tengah (D3:G3)
+          { s: { r: 1, c: 7 }, e: { r: 3, c: 10 } }, // PPN Box
           { s: { r: 2, c: 0 }, e: { r: 2, c: 2 } }, // CUST
           { s: { r: 2, c: 3 }, e: { r: 2, c: 6 } }, // Finishing
-
-          // Row 4: Header Kiri (A4:C4), Tengah (D4:G4)
-          { s: { r: 3, c: 0 }, e: { r: 3, c: 2 } }, // Selesai Produksi
+          { s: { r: 3, c: 0 }, e: { r: 3, c: 2 } }, // Status
           { s: { r: 3, c: 3 }, e: { r: 3, c: 6 } }, // Tebal
 
-          // --- FOOTER ---
-          // Row Start Footer = (Header 5 baris) + (Total Baris Item + Padding)
-          // Header tabel ada di index 4. Item mulai index 5.
-          // Total data rows = items.length + remainingRows (selalu minRows)
-          // Start Footer Index = 5 + minRows
-
-          // Merge Kolom NOTE (A sampai G, vertikal mencakup header ttd + body ttd)
-          // Baris Footer Header = 5 + minRows
-          // Baris Footer Body = 3 baris
-          {
-            s: { r: 5 + minRows, c: 0 },
-            e: { r: 5 + minRows + 3, c: 6 }, // Merge kotak Note besar
-          },
-
-          // Merge Header "Check By" (I sampai J)
-          {
-            s: { r: 5 + minRows, c: 8 },
-            e: { r: 5 + minRows, c: 9 },
-          },
-          // Merge Body "Check By" (I sampai J, ke bawah)
-          {
-            s: { r: 5 + minRows + 1, c: 8 },
-            e: { r: 5 + minRows + 3, c: 9 },
-          },
-          // Merge Body "Adm" (ke bawah)
-          {
-            s: { r: 5 + minRows + 1, c: 7 },
-            e: { r: 5 + minRows + 3, c: 7 },
-          },
-          // Merge Body "PPIC" (ke bawah)
+          // Footer - UPDATED
+          { s: { r: 5 + minRows, c: 0 }, e: { r: 5 + minRows + 3, c: 0 } }, // NOTE Label (Merge vertikal kolom A)
+          { s: { r: 5 + minRows, c: 1 }, e: { r: 5 + minRows + 3, c: 6 } }, // NOTE Content (Merge A besar B-G)
+          { s: { r: 5 + minRows, c: 8 }, e: { r: 5 + minRows, c: 9 } }, // Check By header
+          { s: { r: 5 + minRows + 1, c: 7 }, e: { r: 5 + minRows + 3, c: 7 } }, // Adm
+          { s: { r: 5 + minRows + 1, c: 8 }, e: { r: 5 + minRows + 3, c: 9 } }, // Check By
           {
             s: { r: 5 + minRows + 1, c: 10 },
             e: { r: 5 + minRows + 3, c: 10 },
-          },
+          }, // PPIC
         ];
 
-        // 5. Generate File
+        // Tambahkan styling dengan border dan alignment
+        const borderStyle = {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "thin", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } },
+        };
+
+        // Apply border ke semua cell
+        const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+        for (let row = range.s.r; row <= range.e.r; row++) {
+          for (let col = range.s.c; col <= range.e.c; col++) {
+            const cellAddress = XLSX.utils.encode_col(col) + (row + 1);
+            if (!ws[cellAddress]) {
+              ws[cellAddress] = {};
+            }
+            if (!ws[cellAddress].v) {
+              ws[cellAddress].v = "";
+            }
+            ws[cellAddress].b = borderStyle;
+            ws[cellAddress].a = {
+              vertical: "center",
+              horizontal: row < 5 ? "left" : row === 4 ? "center" : "center",
+              wrapText: true,
+            };
+          }
+        }
+
+        // Bold untuk header baris dan title
+        ws["A1"].font = { bold: true, size: 12 };
+        for (let col = 0; col < 11; col++) {
+          const cell = XLSX.utils.encode_col(col) + "5";
+          if (ws[cell]) {
+            ws[cell].font = { bold: true };
+            ws[cell].a = {
+              horizontal: "center",
+              vertical: "center",
+              wrapText: true,
+            };
+          }
+        }
+
+        // PPN Box styling
+        ws["H2"].font = { bold: true, size: 14 };
+        ws["H2"].a = { horizontal: "center", vertical: "center" };
+
         XLSX.utils.book_append_sheet(wb, ws, "SPK");
         XLSX.writeFile(wb, `SPK-${workOrder?.noSurat || id}.xlsx`);
         toast.success("Excel downloaded successfully");
@@ -644,23 +695,39 @@ function SPKShowPage() {
             <tbody>
               {/* Mapping Items */}
               {workOrder.items.length > 0 ? (
-                workOrder.items.map((item, index) => (
-                  <tr key={index} className="h-8">
-                    <td className="border border-black text-center p-1">
-                      {index + 1}
-                    </td>
-                    <td className="border border-black p-1 pl-2">
-                      {item.productName}
-                    </td>
-                    <td className="border border-black text-center p-1">
-                      {item.quantity} {item.unit || "PCS"}
-                    </td>
-                    {[...Array(7)].map((_, i) => (
-                      <td key={i} className="border border-black"></td>
-                    ))}
-                    <td className="border border-black"></td>
-                  </tr>
-                ))
+                workOrder.items.map((item, index) => {
+                  // Find delivery quantities for this product
+                  const deliveryQuantities =
+                    workOrder.deliveryOrders?.map((delivery) => {
+                      const deliveryItem = delivery.items.find(
+                        (dItem) => dItem.productName === item.productName
+                      );
+                      return deliveryItem?.quantity || 0;
+                    }) || [];
+
+                  return (
+                    <tr key={index} className="h-8">
+                      <td className="border border-black text-center p-1">
+                        {index + 1}
+                      </td>
+                      <td className="border border-black p-1 pl-2">
+                        {item.productName}
+                      </td>
+                      <td className="border border-black text-center p-1">
+                        {item.quantity} {item.unit || "PCS"}
+                      </td>
+                      {[...Array(7)].map((_, i) => (
+                        <td
+                          key={i}
+                          className="border border-black text-center p-1 text-xs"
+                        >
+                          {deliveryQuantities[i] ? deliveryQuantities[i] : ""}
+                        </td>
+                      ))}
+                      <td className="border border-black"></td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
@@ -704,7 +771,7 @@ function SPKShowPage() {
               </span>
             </div>
             {/* Area Kosong */}
-            <div className="grow p-2"></div>
+            <div className="grow p-2">{workOrder.note || "-"}</div>
           </div>
 
           {/* Bagian Kanan: Tanda Tangan */}

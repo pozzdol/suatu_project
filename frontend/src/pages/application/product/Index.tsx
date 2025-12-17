@@ -729,7 +729,7 @@ function ProductIndexPage() {
               <div className="flex items-center gap-2">
                 <div className="w-1 h-5 bg-green-500 rounded-full"></div>
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Recipe / Ingredients
+                  plat / lb
                 </span>
               </div>
               <Button
@@ -780,7 +780,7 @@ function ProductIndexPage() {
 
                     <div className="flex-1 space-y-1">
                       <label className="text-xs font-medium text-gray-500">
-                        Qty
+                        hasil / btg
                       </label>
                       <InputNumber
                         placeholder="0"
@@ -792,6 +792,8 @@ function ProductIndexPage() {
                         size="large"
                         className="w-full!"
                         min={0}
+                        step={0.01}
+                        precision={2}
                       />
                     </div>
 

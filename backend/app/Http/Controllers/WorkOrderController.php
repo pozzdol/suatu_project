@@ -16,7 +16,7 @@ class WorkOrderController extends Controller
     public function index()
     {
         try {
-            $workOrders = WorkOrder::with(['order.orderItems.product'])
+            $workOrders = WorkOrder::with(['order.orderItems.product', 'deliveryOrders.items'])
                 ->whereNull('deleted_at')
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -38,7 +38,27 @@ class WorkOrderController extends Controller
                             'quantity' => $item->quantity,
                         ];
                     }) ?? [],
+                    'deliveryOrders' => $workOrder->deliveryOrders->map(function ($delivery) {
+                        return [
+                            'id' => $delivery->id,
+                            'orderCode' => $delivery->order_code,
+                            'plannedDeliveryDate' => $delivery->planned_delivery_date,
+                            'status' => $delivery->status,
+                            'items' => $delivery->items->map(function ($item) {
+                                return [
+                                    'id' => $item->id,
+                                    'productId' => $item->product_id,
+                                    'productName' => $item->product_name,
+                                    'quantity' => $item->quantity,
+                                    'unit' => $item->unit,
+                                ];
+                            }),
+                            'shippedAt' => $delivery->shipped_at,
+                            'createdAt' => $delivery->created_at,
+                        ];
+                    }) ?? [],
                     'deleted' => $workOrder->deleted,
+                    'confirmed_at' => $workOrder->order?->date_confirm,
                     'created_at' => $workOrder->created_at,
                     'updated_at' => $workOrder->updated_at,
                 ];
@@ -55,7 +75,9 @@ class WorkOrderController extends Controller
     public function show($id)
     {
         try {
-            $workOrder = WorkOrder::with(['order.orderItems.product'])->find($id);
+            $workOrder = WorkOrder::with(['order.orderItems.product', 'deliveryOrders.items'])->find($id);
+
+            // return $workOrder;
 
             if (! $workOrder) {
                 return $this->apiError('Work order not found.', null, 404);
@@ -63,7 +85,6 @@ class WorkOrderController extends Controller
 
             $payload = [
                 'id' => $workOrder->id,
-                'orderId' => $workOrder->order?->id ?? '',
                 'orderId' => $workOrder->order_id,
                 'orderName' => $workOrder->order?->name ?? '',
                 'orderEmail' => $workOrder->order?->email ?? '',
@@ -71,12 +92,34 @@ class WorkOrderController extends Controller
                 'description' => $workOrder->description,
                 'status' => $workOrder->status,
                 'statusOrder' => $workOrder->order?->status ?? '',
+                'finishing' => $workOrder->order?->finishing ?? '',
+                'thickness' => $workOrder->order?->thickness ?? '',
+                'note' => $workOrder->order?->note ?? '',
                 'orderItems' => $workOrder->order?->orderItems->map(function ($item) {
                     return [
                         'id' => $item->id,
                         'productId' => $item->product_id,
                         'productName' => $item->product->data['name'] ?? '',
                         'quantity' => $item->quantity,
+                    ];
+                }) ?? [],
+                'deliveryOrders' => $workOrder->deliveryOrders->map(function ($delivery) {
+                    return [
+                        'id' => $delivery->id,
+                        'orderCode' => $delivery->order_code,
+                        'plannedDeliveryDate' => $delivery->planned_delivery_date,
+                        'status' => $delivery->status,
+                        'items' => $delivery->items->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'productId' => $item->product_id,
+                                'productName' => $item->product_name,
+                                'quantity' => $item->quantity,
+                                'unit' => $item->unit,
+                            ];
+                        }),
+                        'shippedAt' => $delivery->shipped_at,
+                        'createdAt' => $delivery->created_at,
                     ];
                 }) ?? [],
                 'deleted' => $workOrder->deleted,
@@ -95,7 +138,7 @@ class WorkOrderController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $workOrder = WorkOrder::with(['order.orderItems.product'])->find($id);
+            $workOrder = WorkOrder::with(['order.orderItems.product', 'deliveryOrders.items'])->find($id);
 
             if (! $workOrder) {
                 return $this->apiError('Work order not found.', null, 404);
@@ -136,6 +179,25 @@ class WorkOrderController extends Controller
                         'productId' => $item->product_id,
                         'productName' => $item->product->data['name'] ?? '',
                         'quantity' => $item->quantity,
+                    ];
+                }) ?? [],
+                'deliveryOrders' => $workOrder->deliveryOrders->map(function ($delivery) {
+                    return [
+                        'id' => $delivery->id,
+                        'orderCode' => $delivery->order_code,
+                        'plannedDeliveryDate' => $delivery->planned_delivery_date,
+                        'status' => $delivery->status,
+                        'items' => $delivery->items->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'productId' => $item->product_id,
+                                'productName' => $item->product_name,
+                                'quantity' => $item->quantity,
+                                'unit' => $item->unit,
+                            ];
+                        }),
+                        'shippedAt' => $delivery->shipped_at,
+                        'createdAt' => $delivery->created_at,
                     ];
                 }) ?? [],
                 'deleted' => $workOrder->deleted,
@@ -228,7 +290,7 @@ class WorkOrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         try {
-            $workOrder = WorkOrder::with(['order.orderItems.product'])->find($id);
+            $workOrder = WorkOrder::with(['order.orderItems.product', 'deliveryOrders.items'])->find($id);
 
             if (! $workOrder) {
                 return $this->apiError('Work order not found.', null, 404);
@@ -261,6 +323,25 @@ class WorkOrderController extends Controller
                         'productId' => $item->product_id,
                         'productName' => $item->product->data['name'] ?? '',
                         'quantity' => $item->quantity,
+                    ];
+                }) ?? [],
+                'deliveryOrders' => $workOrder->deliveryOrders->map(function ($delivery) {
+                    return [
+                        'id' => $delivery->id,
+                        'orderCode' => $delivery->order_code,
+                        'plannedDeliveryDate' => $delivery->planned_delivery_date,
+                        'status' => $delivery->status,
+                        'items' => $delivery->items->map(function ($item) {
+                            return [
+                                'id' => $item->id,
+                                'productId' => $item->product_id,
+                                'productName' => $item->product_name,
+                                'quantity' => $item->quantity,
+                                'unit' => $item->unit,
+                            ];
+                        }),
+                        'shippedAt' => $delivery->shipped_at,
+                        'createdAt' => $delivery->created_at,
                     ];
                 }) ?? [],
                 'deleted' => $workOrder->deleted,

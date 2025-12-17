@@ -12,6 +12,7 @@ import OrdersRoutes from "./routes/OrdersRoutes";
 import SPKRoutes from "./routes/SPKRoutes";
 import WarehouseRoutes from "./routes/WarehouseRoutes";
 import ProfileIndexPage from "./pages/admin/profile/Index";
+import RawMaterialUsageIndexPage from "./pages/application/raw-material-usage/Index";
 
 function App() {
   return (
@@ -43,6 +44,14 @@ function App() {
             element={
               <Layout isActive={"/raw-material"}>
                 <RawMaterialIndexPage />
+              </Layout>
+            }
+          />
+          <Route
+            path="/raw-material-usage"
+            element={
+              <Layout isActive={"/raw-material-usage"}>
+                <RawMaterialUsageIndexPage />
               </Layout>
             }
           />

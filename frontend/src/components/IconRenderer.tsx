@@ -7,6 +7,7 @@ import {
   DatabaseIcon,
   EnvelopeOpenIcon,
   FlagIcon,
+  ForkKnifeIcon,
   GearIcon,
   HouseIcon,
   KeyIcon,
@@ -54,6 +55,7 @@ export function IconRenderer({
     Shrimp: ShrimpIcon,
     Truck: TruckIcon,
     BellSimple: BellSimpleIcon,
+    ForkKnife: ForkKnifeIcon,
   };
 
   const Icon = iconMap[name] || AppWindowIcon; // Default ke AppWindowIcon jika tidak ditemukan

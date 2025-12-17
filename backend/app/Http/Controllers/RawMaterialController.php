@@ -25,6 +25,8 @@ class RawMaterialController extends Controller
                     'deleted' => $raw->deleted,
                     'name' => $raw->data['name'] ?? '',
                     'stock' => $raw->data['stock'] ?? 0,
+                    'unit' => $raw->data['unit'] ?? '',
+                    'lowerLimit' => $raw->data['lowerLimit'] ?? 0,
                 ];
             });
 
@@ -40,7 +42,9 @@ class RawMaterialController extends Controller
     {
         $rules = [
             'name' => 'required|string|max:255',
-            'stock' => 'required|integer|min:0',
+            'stock' => 'required|numeric|min:0',
+            'unit' => 'nullable|string|max:50',
+            'lowerLimit' => 'nullable|numeric|min:0',
         ];
 
         $validator = Validator::make($request->all(), $rules);
@@ -50,8 +54,15 @@ class RawMaterialController extends Controller
         }
 
         try {
+            $validated = $validator->validated();
+
+            // Set default value for unit if not provided
+            if (! isset($validated['unit']) || empty($validated['unit'])) {
+                $validated['unit'] = 'pcs';
+            }
+
             $raw = new RawMaterial;
-            $raw->data = $validator->validated();
+            $raw->data = $validated;
             $raw->save();
 
             $payload = [
@@ -61,6 +72,8 @@ class RawMaterialController extends Controller
                 'deleted' => $raw->deleted,
                 'name' => $raw->data['name'] ?? '',
                 'stock' => $raw->data['stock'] ?? 0,
+                'unit' => $raw->data['unit'] ?? '',
+                'lowerLimit' => $raw->data['lowerLimit'] ?? 0,
             ];
 
             return $this->apiResponse(['rawMaterial' => $payload], 'Raw material created successfully.', true, 201);
@@ -87,6 +100,8 @@ class RawMaterialController extends Controller
                 'deleted' => $raw->deleted,
                 'name' => $raw->data['name'] ?? '',
                 'stock' => $raw->data['stock'] ?? 0,
+                'unit' => $raw->data['unit'] ?? '',
+                'lowerLimit' => $raw->data['lowerLimit'] ?? 0,
             ];
 
             return $this->apiResponse(['rawMaterial' => $payload], 'Raw material retrieved successfully.');
@@ -108,7 +123,9 @@ class RawMaterialController extends Controller
 
             $rules = [
                 'name' => 'sometimes|required|string|max:255',
-                'stock' => 'sometimes|required|integer|min:0',
+                'stock' => 'sometimes|required|numeric|min:0',
+                'unit' => 'sometimes|nullable|string|max:50',
+                'lowerLimit' => 'sometimes|nullable|numeric|min:0',
             ];
 
             $validator = Validator::make($request->all(), $rules);
@@ -130,6 +147,8 @@ class RawMaterialController extends Controller
                 'deleted' => $raw->deleted,
                 'name' => $raw->data['name'] ?? '',
                 'stock' => $raw->data['stock'] ?? 0,
+                'unit' => $raw->data['unit'] ?? '',
+                'lowerLimit' => $raw->data['lowerLimit'] ?? 0,
             ];
 
             return $this->apiResponse(['rawMaterial' => $payload], 'Raw material updated successfully.');

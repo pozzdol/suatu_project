@@ -10,6 +10,7 @@ use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RawMaterialController;
+use App\Http\Controllers\RawMaterialUsageController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoleWindowController;
 use App\Http\Controllers\UserController;
@@ -22,6 +23,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/health', function () {
     try {
         DB::connection()->getPdo();
+
         return response()->json([
             'status' => 'healthy',
             'database' => 'connected',
@@ -126,6 +128,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/general/setup/raw-materials/{id}', [RawMaterialController::class, 'destroy']);
     Route::delete('/general/setup/raw-materials', [RawMaterialController::class, 'destroy']);
 
+    // Raw Material Usage Routes
+    Route::get('/transactions/raw-material-usage/list', [RawMaterialUsageController::class, 'index']);
+    Route::post('/transactions/raw-material-usage', [RawMaterialUsageController::class, 'create']);
+
+    Route::get('/transactions/raw-material-usage/edit/{id}', [RawMaterialUsageController::class, 'show']);
+    Route::put('/transactions/raw-material-usage/edit/{id}', [RawMaterialUsageController::class, 'update']);
+
+    Route::post('/transactions/raw-material-usage/mass-delete', [RawMaterialUsageController::class, 'massDestroy']);
+    Route::delete('/transactions/raw-material-usage/{id}', [RawMaterialUsageController::class, 'destroy']);
+    Route::delete('/transactions/raw-material-usage', [RawMaterialUsageController::class, 'destroy']);
+
     // Product Routes
     Route::get('/general/setup/products/list', [ProductController::class, 'index']);
     Route::post('/general/setup/products', [ProductController::class, 'create']);
@@ -171,10 +184,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/transactions/finished-goods/{id}', [FinishedGoodsController::class, 'destroy']);
     Route::delete('/transactions/finished-goods', [FinishedGoodsController::class, 'destroy']);
 
-    // Delivery Order Routes
+    // New Delivery Order Routes (Partial Delivery)
+    Route::post('/transactions/delivery-orders', [\App\Http\Controllers\DeliveryOrdersController::class, 'create']);
+    Route::get('/transactions/delivery-orders/work-order/{workOrderId}', [\App\Http\Controllers\DeliveryOrdersController::class, 'getByWorkOrder']);
+    Route::get('/transactions/delivery-orders/work-order/{workOrderId}/summary', [\App\Http\Controllers\DeliveryOrdersController::class, 'getDeliverySummary']);
+    Route::put('/transactions/delivery-orders/{id}/status', [\App\Http\Controllers\DeliveryOrdersController::class, 'updateStatus']);
+    Route::delete('/transactions/delivery-orders/{id}', [\App\Http\Controllers\DeliveryOrdersController::class, 'destroy']);
+
+    // Old Delivery Order Routes (Legacy)
     Route::get('/transactions/delivery-orders/list', [DeliveryOrderController::class, 'index']);
     Route::get('/transactions/delivery-orders/order/{orderId}', [DeliveryOrderController::class, 'byOrder']);
-    Route::post('/transactions/delivery-orders', [DeliveryOrderController::class, 'create']);
 
     Route::get('/transactions/delivery-orders/edit/{id}', [DeliveryOrderController::class, 'show']);
     Route::put('/transactions/delivery-orders/edit/{id}', [DeliveryOrderController::class, 'update']);

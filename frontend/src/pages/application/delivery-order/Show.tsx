@@ -17,6 +17,7 @@ import {
   CircleNotchIcon,
   PlayIcon,
 } from "@phosphor-icons/react";
+import logoApp from "@/assets/logoApp.png";
 
 type WorkOrderItem = {
   productName: string;
@@ -100,7 +101,7 @@ function DeliveryOrderShowPage() {
         const order = response.data.data.deliveryOrder;
         const mappedOrder: WorkOrderDetail = {
           id: order.id,
-          noSurat: order.noSurat || order.no_surat || "-",
+          orderCode: order.orderCode || order.order_code || "-",
           orderName: order.recipientName || order.order_name || "Unknown",
           orderEmail:
             order.orderEmail || order.order_email || "unknown@email.com",
@@ -108,7 +109,7 @@ function DeliveryOrderShowPage() {
           confirmedAt: order.updated_at || order.confirmedAt || null,
           createdAt: order.created_at || order.createdAt || null,
           items:
-            order.orderItems?.map((item: any) => ({
+            order.items?.map((item: any) => ({
               productName: item.productName || "Unnamed Product",
               quantity: item.quantity ?? 0,
               unit: item.unit || "PCS",
@@ -194,9 +195,7 @@ function DeliveryOrderShowPage() {
 
       if (response && response.data.success) {
         toast.success(successMessage);
-        setWorkOrder((prev) =>
-          prev ? { ...prev, status: nextStatus } : null
-        );
+        setWorkOrder((prev) => (prev ? { ...prev, status: nextStatus } : null));
       } else {
         toast.error(response?.data?.message || "Failed to update status");
       }
@@ -315,7 +314,7 @@ function DeliveryOrderShowPage() {
 
         // Header Kiri
         rows.push([
-          "UD. BAROKAH MANDIRI",
+          `${"pt. anugerah hutama mandiri".toLocaleUpperCase()}`,
           null,
           null,
           "SURAT PENGIRIMAN BARANG",
@@ -460,14 +459,25 @@ function DeliveryOrderShowPage() {
         {/* HEADER KOP SURAT */}
         <div className="flex justify-between mb-1">
           {/* Sisi Kiri Header */}
-          <div className="w-1/2 text-center">
-            <h2 className="font-bold text-base tracking-wide">
-              UD. BAROKAH MANDIRI
-            </h2>
-            <p className="text-sm font-medium">CABLE SUPPORT SYSTEM</p>
-            <p className="text-xs">
-              Specialist Product : Cable tray, Duct, Ladder
-            </p>
+          <div className="w-1/2 flex items-center gap-3">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <img
+                src={logoApp}
+                alt="Company Logo"
+                className="h-16 w-16 object-contain"
+              />
+            </div>
+            {/* Company Info */}
+            <div className="text-left">
+              <h2 className="font-bold text-base tracking-wide uppercase">
+                pt anugerah hutama mandiri
+              </h2>
+              <p className="text-sm font-medium">CABLE SUPPORT SYSTEM</p>
+              <p className="text-xs">
+                Specialist Product : Cable tray, Duct, Ladder
+              </p>
+            </div>
           </div>
 
           {/* Sisi Kanan Header */}
@@ -482,7 +492,7 @@ function DeliveryOrderShowPage() {
 
               <div className="pl-4">NO SPB</div>
               <div>:</div>
-              <div>{workOrder.noSurat}</div>
+              <div>{workOrder.orderCode}</div>
 
               <div className="pl-4">PO NO</div>
               <div>:</div>
@@ -656,41 +666,37 @@ function DeliveryOrderShowPage() {
             </button>
           )}
 
-          {workOrder.status === "shipped" &&
-            isEditable &&
-            isAdmin && (
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-500 text-sm font-medium rounded-lg text-white hover:bg-gray-600 transition-all disabled:opacity-50"
-                onClick={handleRevertStatus}
-                disabled={updatingStatus || downloading !== null}
-              >
-                {updatingStatus ? (
-                  <CircleNotchIcon className="animate-spin w-4 h-4" />
-                ) : (
-                  <ArrowCircleLeftIcon weight="duotone" className="w-4 h-4" />
-                )}
-                {updatingStatus ? "Updating..." : `Revert to Pending`}
-              </button>
-            )}
+          {workOrder.status === "shipped" && isEditable && isAdmin && (
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-500 text-sm font-medium rounded-lg text-white hover:bg-gray-600 transition-all disabled:opacity-50"
+              onClick={handleRevertStatus}
+              disabled={updatingStatus || downloading !== null}
+            >
+              {updatingStatus ? (
+                <CircleNotchIcon className="animate-spin w-4 h-4" />
+              ) : (
+                <ArrowCircleLeftIcon weight="duotone" className="w-4 h-4" />
+              )}
+              {updatingStatus ? "Updating..." : `Revert to Pending`}
+            </button>
+          )}
 
-            {workOrder.status === "delivered" &&
-            isEditable &&
-            isAdmin && (
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gray-500 text-sm font-medium rounded-lg text-white hover:bg-gray-600 transition-all disabled:opacity-50"
-                onClick={handleRevertStatus}
-                disabled={updatingStatus || downloading !== null}
-              >
-                {updatingStatus ? (
-                  <CircleNotchIcon className="animate-spin w-4 h-4" />
-                ) : (
-                  <ArrowCircleLeftIcon weight="duotone" className="w-4 h-4" />
-                )}
-                {updatingStatus ? "Updating..." : `Revert to Shipped`}
-              </button>
-            )}
+          {workOrder.status === "delivered" && isEditable && isAdmin && (
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-500 text-sm font-medium rounded-lg text-white hover:bg-gray-600 transition-all disabled:opacity-50"
+              onClick={handleRevertStatus}
+              disabled={updatingStatus || downloading !== null}
+            >
+              {updatingStatus ? (
+                <CircleNotchIcon className="animate-spin w-4 h-4" />
+              ) : (
+                <ArrowCircleLeftIcon weight="duotone" className="w-4 h-4" />
+              )}
+              {updatingStatus ? "Updating..." : `Revert to Shipped`}
+            </button>
+          )}
         </div>
 
         <div className="flex gap-3">

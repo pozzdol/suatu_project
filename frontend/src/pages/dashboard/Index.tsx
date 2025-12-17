@@ -131,10 +131,7 @@ function DashboardIndexPage() {
             </div>
 
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 tracking-tight mb-4">
-              {getGreeting()},{" "}
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                {userName || "there"}
-              </span>
+              PT ANUGERAH HUTAMA MANDIRI PERKASA
             </h1>
 
             <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto leading-relaxed">

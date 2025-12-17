@@ -8,6 +8,7 @@ import Loading from "@/components/Loading";
 import Permit from "@/components/Permit";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
 import { EyeIcon, InfoIcon } from "@phosphor-icons/react";
+import dayjs from "dayjs";
 
 type WorkOrderItem = {
   productName: string;
@@ -82,7 +83,7 @@ function SPKIndexPage() {
             orderCode: order.noSurat || "-",
             customerName: order.orderName || "Unknown Customer",
             customerEmail: order.orderEmail || "Unknown User",
-            confirmedAt: order.updated_at || null,
+            confirmedAt: order.confirmed_at || order.created_at || null,
             status: order.status || "pending",
             items:
               order.orderItems?.map((item: any) => ({
@@ -113,20 +114,6 @@ function SPKIndexPage() {
   // EFFECTS END
 
   //  HELPERS
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return "-";
-    try {
-      return new Intl.DateTimeFormat("id-ID", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(new Date(dateString));
-    } catch (error) {
-      return dateString;
-    }
-  };
 
   const getStatusBadge = (status?: string) => {
     const statusConfig: Record<
@@ -258,18 +245,18 @@ function SPKIndexPage() {
                 key={order.id}
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+                <div className="gap-3">
+                  <div className="flex justify-between">
                     <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400">
                       Work Order
                     </p>
-                    <h2 className="text-2xl font-semibold text-gray-900 mt-1">
-                      {order.orderCode}
-                    </h2>
+                    {getStatusBadge(
+                      order.status ? status[order.status] : undefined
+                    )}
                   </div>
-                  {getStatusBadge(
-                    order.status ? status[order.status] : undefined
-                  )}
+                  <h2 className="text-2xl font-semibold text-gray-900 mt-1">
+                    {order.orderCode}
+                  </h2>
                 </div>
 
                 <div className="mt-5 space-y-4">
@@ -295,7 +282,7 @@ function SPKIndexPage() {
                         Confirmed At
                       </p>
                       <p className="text-sm text-gray-700 mt-1">
-                        {formatDate(order.confirmedAt)}
+                        {dayjs(order.confirmedAt).format("DD MMMM YYYY")}
                       </p>
                     </div>
                   </div>

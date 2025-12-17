@@ -15,7 +15,7 @@ class DeliveryOrderController extends Controller
     public function index()
     {
         try {
-            $deliveryOrders = DeliveryOrder::with(['order.orderItems.product'])
+            $deliveryOrders = DeliveryOrder::with(['order', 'items'])
                 ->whereNull('deleted_at')
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -73,7 +73,7 @@ class DeliveryOrderController extends Controller
     public function show($id)
     {
         try {
-            $deliveryOrder = DeliveryOrder::with(['order.orderItems.product'])->find($id);
+            $deliveryOrder = DeliveryOrder::with(['order', 'items'])->find($id);
 
             if (! $deliveryOrder) {
                 return $this->apiError('Delivery order not found.', null, 404);
@@ -321,7 +321,7 @@ class DeliveryOrderController extends Controller
     public function byOrder($orderId)
     {
         try {
-            $deliveryOrders = DeliveryOrder::with(['order.orderItems.product'])
+            $deliveryOrders = DeliveryOrder::with(['order', 'items'])
                 ->where('order_id', $orderId)
                 ->whereNull('deleted_at')
                 ->orderBy('created_at', 'desc')
@@ -344,15 +344,16 @@ class DeliveryOrderController extends Controller
      */
     private function transformDeliveryOrder(DeliveryOrder $deliveryOrder): array
     {
-        // Transform order items (products)
-        $orderItems = [];
-        if ($deliveryOrder->order && $deliveryOrder->order->orderItems) {
-            $orderItems = $deliveryOrder->order->orderItems->map(function ($item) {
+        // Transform delivery order items (actual items being delivered)
+        $deliveryItems = [];
+        if ($deliveryOrder->items) {
+            $deliveryItems = $deliveryOrder->items->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'productId' => $item->product_id,
-                    'productName' => $item->product?->data['name']  ?? null,
+                    'productName' => $item->product_name,
                     'quantity' => $item->quantity,
+                    'unit' => $item->unit,
                 ];
             })->toArray();
         }
@@ -360,6 +361,8 @@ class DeliveryOrderController extends Controller
         return [
             'id' => $deliveryOrder->id,
             'orderId' => $deliveryOrder->order_id,
+            'workOrderId' => $deliveryOrder->work_order_id,
+            'orderCode' => $deliveryOrder->order_code,
             'noSurat' => $deliveryOrder->no_surat,
             'description' => $deliveryOrder->description,
             'recipientName' => $deliveryOrder->order?->name ?? null,
@@ -368,6 +371,7 @@ class DeliveryOrderController extends Controller
             'status' => $deliveryOrder->status,
             'shippedAt' => $deliveryOrder->shipped_at,
             'deliveredAt' => $deliveryOrder->delivered_at,
+            'plannedDeliveryDate' => $deliveryOrder->planned_delivery_date,
             'order' => $deliveryOrder->order ? [
                 'id' => $deliveryOrder->order->id,
                 'name' => $deliveryOrder->order->name,
@@ -376,9 +380,9 @@ class DeliveryOrderController extends Controller
                 'address' => $deliveryOrder->order->address,
                 'status' => $deliveryOrder->order->status,
             ] : null,
-            'orderItems' => $orderItems,
-            'totalItems' => count($orderItems),
-            'totalQuantity' => array_sum(array_column($orderItems, 'quantity')),
+            'items' => $deliveryItems,
+            'totalItems' => count($deliveryItems),
+            'totalQuantity' => array_sum(array_column($deliveryItems, 'quantity')),
             'deleted' => $deliveryOrder->deleted,
             'createdAt' => $deliveryOrder->created_at,
             'updatedAt' => $deliveryOrder->updated_at,

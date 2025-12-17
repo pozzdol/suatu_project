@@ -20,7 +20,7 @@ type WorkOrder = {
   orderCode: string;
   customerName: string;
   customerEmail: string;
-  confirmedAt?: string | null;
+  plannedDeliveryDate?: string | null;
   status?: string;
   items: WorkOrderItem[];
 };
@@ -82,13 +82,15 @@ function DeliveryOrderPage() {
         const mappedOrders: WorkOrder[] =
           response.data.data.deliveryOrders?.map((order: any) => ({
             id: order.id,
-            orderCode: order.noSurat || "-",
+            orderCode: order.noSurat || order.orderCode || "-",
             customerName: order.recipientName || "Unknown Customer",
-            customerEmail: order.order.email || "Unknown User",
-            confirmedAt: order.createdAt || null,
+            customerEmail:
+              order.recipientPhone || order.order.email || "Unknown User",
+            plannedDeliveryDate:
+              order.planned_delivery_date || order.plannedDeliveryDate || null,
             status: order.status || "pending",
             items:
-              order.orderItems?.map((item: any) => ({
+              order.items?.map((item: any) => ({
                 productName: item.productName || "Unnamed Product",
                 quantity: item.quantity ?? 0,
               })) || [],
@@ -263,7 +265,7 @@ function DeliveryOrderPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.26em] text-gray-400">
-                        Email
+                        Telp / Email
                       </p>
                       <p className="text-sm text-gray-700 mt-1">
                         {order.customerEmail || "-"}
@@ -271,10 +273,14 @@ function DeliveryOrderPage() {
                     </div>
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.26em] text-gray-400">
-                        Confirmed At
+                        Planned Delivery Date
                       </p>
                       <p className="text-sm text-gray-700 mt-1">
-                        {dayjs(order.confirmedAt).format("DD MMMM YYYY")}
+                        {order.plannedDeliveryDate
+                          ? dayjs(order.plannedDeliveryDate).format(
+                              "DD MMMM YYYY"
+                            )
+                          : "-"}
                       </p>
                     </div>
                   </div>

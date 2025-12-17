@@ -30,7 +30,7 @@ class Order extends Model
         'phone',
         'address',
         'finishing',
-        'tebal_plat',
+        'thickness',
         'note',
         'status',
         'date_confirm',

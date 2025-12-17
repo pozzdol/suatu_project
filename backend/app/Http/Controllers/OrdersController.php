@@ -41,7 +41,7 @@ class OrdersController extends Controller
                     'phone' => $order->phone,
                     'address' => $order->address,
                     'finishing' => $order->finishing,
-                    'tebal_plat' => $order->tebal_plat,
+                    'thickness' => $order->thickness,
                     'note' => $order->note,
                     'date_confirm' => $order->date_confirm,
                     'status' => $order->status,
@@ -76,7 +76,7 @@ class OrdersController extends Controller
             'phone' => 'required|string|max:50',
             'address' => 'nullable|string|max:1000',
             'finishing' => 'nullable|string|max:255',
-            'tebal_plat' => 'nullable|string|max:50',
+            'thickness' => 'nullable|string|max:50',
             'note' => 'nullable|string|max:5000',
         ];
 
@@ -109,7 +109,7 @@ class OrdersController extends Controller
                 'phone' => $order->phone,
                 'address' => $order->address,
                 'finishing' => $order->finishing,
-                'tebal_plat' => $order->tebal_plat,
+                'thickness' => $order->thickness,
                 'note' => $order->note,
                 'date_confirm' => $order->date_confirm,
                 'status' => $order->status,
@@ -144,7 +144,7 @@ class OrdersController extends Controller
                 'phone' => $order->phone,
                 'address' => $order->address,
                 'finishing' => $order->finishing,
-                'tebal_plat' => $order->tebal_plat,
+                'thickness' => $order->thickness,
                 'note' => $order->note,
                 'date_confirm' => $order->date_confirm,
                 'status' => $order->status,
@@ -187,7 +187,7 @@ class OrdersController extends Controller
                 'phone' => 'sometimes|required|string|max:50',
                 'address' => 'sometimes|nullable|string|max:1000',
                 'finishing' => 'sometimes|nullable|string|max:255',
-                'tebal_plat' => 'sometimes|nullable|string|max:50',
+                'thickness' => 'sometimes|nullable|string|max:50',
                 'note' => 'sometimes|nullable|string|max:5000',
                 'date_confirm' => 'sometimes|nullable|date',
                 'status' => 'sometimes|required|string|in:draft,confirm',
@@ -202,8 +202,6 @@ class OrdersController extends Controller
                 return $this->apiError('Validation error.', $validator->errors(), 422);
             }
 
-            $validated = $validator->validated();
-
             $workOrderDescription = $request->input('work_order_description');
             if ($workOrderDescription === null) {
                 $workOrderDescription = $request->input('workOrderDescription');
@@ -212,8 +210,8 @@ class OrdersController extends Controller
             if (isset($validated['finishing'])) {
                 $order->finishing = $validated['finishing'];
             }
-            if (isset($validated['tebal_plat'])) {
-                $order->tebal_plat = $validated['tebal_plat'];
+            if (isset($validated['thickness'])) {
+                $order->thickness = $validated['thickness'];
             }
             if (isset($validated['note'])) {
                 $order->note = $validated['note'];
@@ -224,10 +222,6 @@ class OrdersController extends Controller
 
             if (array_key_exists('status', $validated)) {
                 $targetStatus = $validated['status'];
-            }
-
-            if ($originalStatus === 'confirm') {
-                $this->revertRawMaterialUsage($order);
             }
 
             if (isset($validated['name'])) {
@@ -289,25 +283,7 @@ class OrdersController extends Controller
                     );
                 }
 
-                $availabilityCheck = $this->checkRawMaterialAvailability($order);
-
-                if (! $availabilityCheck['available']) {
-                    DB::rollBack();
-
-                    return $this->apiError(
-                        'Raw material tidak tersedia.',
-                        ['insufficient_materials' => $availabilityCheck['insufficient']],
-                        422
-                    );
-                }
-
-                $usedRawMaterialIds = $this->processRawMaterialUsage($order);
                 $this->createOrRestoreWorkOrder($order, $workOrderDescription);
-
-                // Check and send low stock notification after raw material deducted
-                if (! empty($usedRawMaterialIds)) {
-                    $this->lowStockNotificationService->checkAndNotify($usedRawMaterialIds);
-                }
             }
 
             if ($targetStatus !== 'confirm' && $originalStatus === 'confirm') {
@@ -326,7 +302,7 @@ class OrdersController extends Controller
                 'phone' => $order->phone,
                 'address' => $order->address,
                 'finishing' => $order->finishing,
-                'tebal_plat' => $order->tebal_plat,
+                'thickness' => $order->thickness,
                 'note' => $order->note,
                 'date_confirm' => $order->date_confirm,
                 'status' => $order->status,
@@ -376,7 +352,6 @@ class OrdersController extends Controller
                 return $this->apiError('Order not found.', null, 404);
             }
 
-            $this->revertRawMaterialUsage($order);
             $this->softDeleteWorkOrder($order);
 
             $order->delete();
@@ -413,7 +388,6 @@ class OrdersController extends Controller
                 $order = Order::find($orderId);
 
                 if ($order) {
-                    $this->revertRawMaterialUsage($order);
                     $this->softDeleteWorkOrder($order);
                     $order->delete();
                     $deletedCount++;

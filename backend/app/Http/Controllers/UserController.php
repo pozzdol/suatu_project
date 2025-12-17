@@ -63,6 +63,7 @@ class UserController extends Controller
             'email' => $request->email,
             'employee_id' => $request->employee_id,
             'password' => Hash::make($request->password),
+            'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
 
