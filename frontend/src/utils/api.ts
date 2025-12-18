@@ -12,7 +12,7 @@ interface ApiResponse<T = any> {
 // Create axios instance with default config
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api", // Use env variable with fallback
-  timeout: 10000,
+  timeout: 30000, // 30 seconds
   headers: {
     "Content-Type": "application/json",
   },
@@ -181,6 +181,12 @@ export const requestApiLegacy = async (
     console.error("API request error:", error);
     throw error;
   }
+};
+
+// AbortController helper untuk cancel request saat component unmount
+export const createAbortSignal = () => {
+  const controller = new AbortController();
+  return controller;
 };
 
 // Convenience methods for common use cases

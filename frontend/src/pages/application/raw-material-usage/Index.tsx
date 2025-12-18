@@ -16,6 +16,7 @@ import dayjs from "dayjs";
 type RawMaterialUsageData = Record<string, unknown> & {
   id: string;
   orderId?: string;
+  nameOrder?: string;
   orderItemId?: string;
   productId?: string;
   productName: string;
@@ -23,6 +24,11 @@ type RawMaterialUsageData = Record<string, unknown> & {
   rawMaterialName: string;
   quantityUsed: number;
   unit: string;
+  workOrder?: {
+    id: string;
+    workOrderNumber: string;
+    status: string;
+  };
   created_at: string;
 };
 
@@ -404,6 +410,13 @@ function RawMaterialUsageIndexPage() {
         exportable: true,
       },
       {
+        label: "Order Info",
+        field: "nameOrder",
+        type: "text" as HeaderType,
+        showOnMobile: true,
+        exportable: true,
+      },
+      {
         label: "Raw Material",
         field: "rawMaterialName",
         type: "text" as HeaderType,
@@ -558,6 +571,11 @@ function RawMaterialUsageIndexPage() {
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
                 {row.productName || "-"}
+              </td>
+              <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
+                {row.nameOrder && row.workOrder?.workOrderNumber
+                  ? `${row.nameOrder} - ${row.workOrder.workOrderNumber}`
+                  : row.nameOrder || row.workOrder?.workOrderNumber || "-"}
               </td>
               <td className="py-2 px-4 w-fit text-xs font-mono text-gray-500 border-b border-gray-300">
                 {row.rawMaterialName}

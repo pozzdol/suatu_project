@@ -313,7 +313,7 @@ function Layout({ children, isActive }: LayoutProps) {
                         {profile?.name}
                       </div>
                       <div className="text-sm text-gray-600">
-                        PT Tata Metal Lestari
+                        {profile?.role.data.name}
                       </div>
                     </div>
                   </div>

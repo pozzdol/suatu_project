@@ -62,7 +62,7 @@ class OrdersController extends Controller
 
             return $this->apiResponse(['orders' => $payload], 'Orders retrieved successfully.', true, 200);
         } catch (\Exception $e) {
-            Log::error('Order retrieval error: '.$e->getMessage());
+            Log::error('Order retrieval error: ' . $e->getMessage());
 
             return $this->apiError('Failed to retrieve orders.', null, 500);
         }
@@ -122,7 +122,7 @@ class OrdersController extends Controller
 
             return $this->apiResponse(['order' => $payload], 'Order created successfully.', true, 201);
         } catch (\Exception $e) {
-            Log::error('Order creation error: '.$e->getMessage());
+            Log::error('Order creation error: ' . $e->getMessage());
 
             return $this->apiError('Failed to create order.', null, 500);
         }
@@ -164,7 +164,7 @@ class OrdersController extends Controller
 
             return $this->apiResponse(['order' => $payload], 'Order retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Order retrieval error: '.$e->getMessage());
+            Log::error('Order retrieval error: ' . $e->getMessage());
 
             return $this->apiError('Failed to retrieve order.', null, 500);
         }
@@ -201,6 +201,9 @@ class OrdersController extends Controller
             if ($validator->fails()) {
                 return $this->apiError('Validation error.', $validator->errors(), 422);
             }
+
+            // FIX: Tambahkan baris ini untuk mendapatkan validated data
+            $validated = $validator->validated();
 
             $workOrderDescription = $request->input('work_order_description');
             if ($workOrderDescription === null) {
@@ -284,10 +287,19 @@ class OrdersController extends Controller
                 }
 
                 $this->createOrRestoreWorkOrder($order, $workOrderDescription);
+
+                // FIX: Proses raw material usage dan trigger notifikasi
+                $usedRawMaterialIds = $this->processRawMaterialUsage($order);
+
+                // Trigger low stock notification untuk raw materials yang digunakan
+                if (! empty($usedRawMaterialIds)) {
+                    $this->lowStockNotificationService->checkAndNotify($usedRawMaterialIds);
+                }
             }
 
             if ($targetStatus !== 'confirm' && $originalStatus === 'confirm') {
                 $this->softDeleteWorkOrder($order);
+                $this->revertRawMaterialUsage($order);
             }
 
             $order->status = $targetStatus;
@@ -325,7 +337,7 @@ class OrdersController extends Controller
             return $this->apiResponse(['order' => $payload], 'Order updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Order update error: '.$e->getMessage());
+            Log::error('Order update error: ' . $e->getMessage());
 
             return $this->apiError('Failed to update order.', null, 500);
         }
@@ -361,7 +373,7 @@ class OrdersController extends Controller
             return $this->apiResponse(null, 'Order deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Order deletion error: '.$e->getMessage());
+            Log::error('Order deletion error: ' . $e->getMessage());
 
             return $this->apiError('Failed to delete order.', null, 500);
         }
@@ -398,7 +410,7 @@ class OrdersController extends Controller
 
             $message = "{$deletedCount} order(s) deleted successfully.";
             if (! empty($notFoundIds)) {
-                $message .= ' Not found: '.implode(', ', $notFoundIds);
+                $message .= ' Not found: ' . implode(', ', $notFoundIds);
             }
 
             DB::commit();
@@ -409,7 +421,7 @@ class OrdersController extends Controller
             ], $message);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Mass order deletion error: '.$e->getMessage());
+            Log::error('Mass order deletion error: ' . $e->getMessage());
 
             return $this->apiError('Failed to delete orders.', null, 500);
         }

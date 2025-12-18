@@ -18,31 +18,18 @@ class RawMaterialUsageController extends Controller
     public function index()
     {
         try {
-            $usages = RawMaterialUsage::with(['order', 'orderItem', 'product', 'rawMaterial'])
+            $usages = RawMaterialUsage::with(['order', 'orderItem', 'product', 'rawMaterial', 'workOrder'])
                 ->whereNull('deleted_at')
                 ->orderBy('created_at', 'desc')
                 ->get();
 
             $payload = $usages->map(function ($usage) {
-                return [
-                    'id' => $usage->id,
-                    'orderId' => $usage->order_id,
-                    'orderItemId' => $usage->order_item_id,
-                    'productId' => $usage->product_id,
-                    'productName' => $usage->product->data['name'] ?? '',
-                    'rawMaterialId' => $usage->raw_material_id,
-                    'rawMaterialName' => $usage->rawMaterial->data['name'] ?? '',
-                    'quantityUsed' => $usage->quantity_used,
-                    'unit' => $usage->rawMaterial->data['unit'] ?? '',
-                    'deleted' => $usage->deleted,
-                    'created_at' => $usage->created_at,
-                    'updated_at' => $usage->updated_at,
-                ];
+                return $this->transformRawMaterialUsage($usage);
             });
 
             return $this->apiResponse(['rawMaterialUsages' => $payload], 'Raw material usages retrieved successfully.', true, 200);
         } catch (\Exception $e) {
-            Log::error('Raw material usage retrieval error: '.$e->getMessage());
+            Log::error('Raw material usage retrieval error: ' . $e->getMessage());
 
             return $this->apiError('Failed to retrieve raw material usages.', null, 500);
         }
@@ -105,32 +92,16 @@ class RawMaterialUsageController extends Controller
                 'quantity_used' => $validated['quantity_used'],
             ]);
 
-            // Check and send low stock notification
-            // $this->lowStockNotificationService->checkAndNotify([$validated['raw_material_id']]);
+            $usage->load(['order', 'orderItem', 'product', 'rawMaterial', 'workOrder']);
 
-            $usage->load(['order', 'orderItem', 'product', 'rawMaterial']);
-
-            $payload = [
-                'id' => $usage->id,
-                'orderId' => $usage->order_id,
-                'orderItemId' => $usage->order_item_id,
-                'productId' => $usage->product_id,
-                'productName' => $usage->product->data['name'] ?? '',
-                'rawMaterialId' => $usage->raw_material_id,
-                'rawMaterialName' => $usage->rawMaterial->data['name'] ?? '',
-                'quantityUsed' => $usage->quantity_used,
-                'unit' => $usage->rawMaterial->data['unit'] ?? '',
-                'deleted' => $usage->deleted,
-                'created_at' => $usage->created_at,
-                'updated_at' => $usage->updated_at,
-            ];
+            $payload = $this->transformRawMaterialUsage($usage);
 
             DB::commit();
 
             return $this->apiResponse(['rawMaterialUsage' => $payload], 'Raw material usage created successfully.', true, 201);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Raw material usage creation error: '.$e->getMessage());
+            Log::error('Raw material usage creation error: ' . $e->getMessage());
 
             return $this->apiError('Failed to create raw material usage.', null, 500);
         }
@@ -139,30 +110,17 @@ class RawMaterialUsageController extends Controller
     public function show($id)
     {
         try {
-            $usage = RawMaterialUsage::with(['order', 'orderItem', 'product', 'rawMaterial'])->find($id);
+            $usage = RawMaterialUsage::with(['order', 'orderItem', 'product', 'rawMaterial', 'workOrder'])->find($id);
 
             if (! $usage) {
                 return $this->apiError('Raw material usage not found.', null, 404);
             }
 
-            $payload = [
-                'id' => $usage->id,
-                'orderId' => $usage->order_id,
-                'orderItemId' => $usage->order_item_id,
-                'productId' => $usage->product_id,
-                'productName' => $usage->product->data['name'] ?? '',
-                'rawMaterialId' => $usage->raw_material_id,
-                'rawMaterialName' => $usage->rawMaterial->data['name'] ?? '',
-                'quantityUsed' => $usage->quantity_used,
-                'unit' => $usage->rawMaterial->data['unit'] ?? '',
-                'deleted' => $usage->deleted,
-                'created_at' => $usage->created_at,
-                'updated_at' => $usage->updated_at,
-            ];
+            $payload = $this->transformRawMaterialUsage($usage);
 
             return $this->apiResponse(['rawMaterialUsage' => $payload], 'Raw material usage retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Raw material usage retrieval error: '.$e->getMessage());
+            Log::error('Raw material usage retrieval error: ' . $e->getMessage());
 
             return $this->apiError('Failed to retrieve raw material usage.', null, 500);
         }
@@ -247,33 +205,16 @@ class RawMaterialUsageController extends Controller
             $usage->quantity_used = $newQuantity;
             $usage->save();
 
-            // Check and send low stock notification
-            $affectedMaterials = array_unique([$usage->raw_material_id, $originalRawMaterial->id]);
-            // $this->lowStockNotificationService->checkAndNotify($affectedMaterials);
+            $usage->load(['order', 'orderItem', 'product', 'rawMaterial', 'workOrder']);
 
-            $usage->load(['order', 'orderItem', 'product', 'rawMaterial']);
-
-            $payload = [
-                'id' => $usage->id,
-                'orderId' => $usage->order_id,
-                'orderItemId' => $usage->order_item_id,
-                'productId' => $usage->product_id,
-                'productName' => $usage->product->data['name'] ?? '',
-                'rawMaterialId' => $usage->raw_material_id,
-                'rawMaterialName' => $usage->rawMaterial->data['name'] ?? '',
-                'quantityUsed' => $usage->quantity_used,
-                'unit' => $usage->rawMaterial->data['unit'] ?? '',
-                'deleted' => $usage->deleted,
-                'created_at' => $usage->created_at,
-                'updated_at' => $usage->updated_at,
-            ];
+            $payload = $this->transformRawMaterialUsage($usage);
 
             DB::commit();
 
             return $this->apiResponse(['rawMaterialUsage' => $payload], 'Raw material usage updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Raw material usage update error: '.$e->getMessage());
+            Log::error('Raw material usage update error: ' . $e->getMessage());
 
             return $this->apiError('Failed to update raw material usage.', null, 500);
         }
@@ -314,7 +255,7 @@ class RawMaterialUsageController extends Controller
             return $this->apiResponse(null, 'Raw material usage deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Raw material usage deletion error: '.$e->getMessage());
+            Log::error('Raw material usage deletion error: ' . $e->getMessage());
 
             return $this->apiError('Failed to delete raw material usage.', null, 500);
         }
@@ -357,7 +298,7 @@ class RawMaterialUsageController extends Controller
 
             $message = "{$deletedCount} raw material usage(s) deleted successfully.";
             if (! empty($notFoundIds)) {
-                $message .= ' Not found: '.implode(', ', $notFoundIds);
+                $message .= ' Not found: ' . implode(', ', $notFoundIds);
             }
 
             DB::commit();
@@ -368,9 +309,36 @@ class RawMaterialUsageController extends Controller
             ], $message);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Mass raw material usage deletion error: '.$e->getMessage());
+            Log::error('Mass raw material usage deletion error: ' . $e->getMessage());
 
             return $this->apiError('Failed to delete raw material usages.', null, 500);
         }
+    }
+
+    /**
+     * Transform raw material usage for response
+     */
+    private function transformRawMaterialUsage($usage): array
+    {
+        return [
+            'id' => $usage->id,
+            'orderId' => $usage->order_id,
+            'nameOrder' => $usage->order ? $usage->order->name : '',
+            'orderItemId' => $usage->order_item_id,
+            'productId' => $usage->product_id,
+            'productName' => $usage->product?->data['name'] ?? '',
+            'rawMaterialId' => $usage->raw_material_id,
+            'rawMaterialName' => $usage->rawMaterial?->data['name'] ?? '',
+            'quantityUsed' => $usage->quantity_used,
+            'unit' => $usage->rawMaterial?->data['unit'] ?? '',
+            'workOrder' => $usage->workOrder ? [
+                'id' => $usage->workOrder->id,
+                'workOrderNumber' => $usage->workOrder->no_surat,
+                'status' => $usage->workOrder->status,
+            ] : null,
+            'deleted' => $usage->deleted,
+            'created_at' => $usage->created_at,
+            'updated_at' => $usage->updated_at,
+        ];
     }
 }

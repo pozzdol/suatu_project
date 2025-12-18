@@ -15,7 +15,7 @@ class AuthController extends Controller
 
     public function profile()
     {
-        $user = Auth::user();
+        $user = Auth::user()->load('role');
 
         if (! $user) {
             return $this->apiError('User not found.', null, 404);
@@ -124,7 +124,7 @@ class AuthController extends Controller
 
         $data = $request->validate([
             'name' => ['sometimes', 'required', 'string', 'max:255'],
-            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
         ]);
 
         if (isset($data['name'])) {
