@@ -82,12 +82,13 @@ function DeliveryOrderPage() {
         const mappedOrders: WorkOrder[] =
           response.data.data.deliveryOrders?.map((order: any) => ({
             id: order.id,
-            orderCode: order.noSurat || order.orderCode || "-",
-            customerName: order.recipientName || "Unknown Customer",
+            orderCode: order.orderCode || order.noSurat || "-",
+            customerName:
+              order.recipientName || order.order?.name || "Unknown Customer",
             customerEmail:
-              order.recipientPhone || order.order.email || "Unknown User",
+              order.recipientPhone || order.order?.email || "Unknown User",
             plannedDeliveryDate:
-              order.planned_delivery_date || order.plannedDeliveryDate || null,
+              order.plannedDeliveryDate || order.planned_delivery_date || null,
             status: order.status || "pending",
             items:
               order.items?.map((item: any) => ({
