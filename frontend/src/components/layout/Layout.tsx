@@ -28,10 +28,20 @@ interface MenuItem {
   subMenu?: MenuItem[];
 }
 
+interface Profile {
+  name?: string;
+  email?: string;
+  role?: {
+    data?: {
+      name?: string;
+    };
+  };
+}
+
 function Layout({ children, isActive }: LayoutProps) {
   const navigate = useNavigate();
   const [sidebarMenu, setSidebarMenu] = useState<MenuItem[]>([]);
-  const [profile, setProfile] = useState<{ [key: string]: string }>({});
+  const [profile, setProfile] = useState<Profile>({});
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
     const saved = localStorage.getItem("isSidebarOpen");
     return saved !== null ? JSON.parse(saved) : true;
@@ -313,7 +323,8 @@ function Layout({ children, isActive }: LayoutProps) {
                         {profile?.name}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {profile?.role.data.name}
+                        {profile?.role?.data?.name ||
+                          "PT Anugerah Hutama Mandiri Perkasa"}
                       </div>
                     </div>
                   </div>
