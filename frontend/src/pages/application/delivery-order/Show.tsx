@@ -16,6 +16,7 @@ import {
   FileXls,
   CircleNotchIcon,
   PlayIcon,
+  FilePdfIcon,
 } from "@phosphor-icons/react";
 import logoApp from "@/assets/logoApp.png";
 
@@ -27,9 +28,10 @@ type WorkOrderItem = {
 
 type WorkOrderDetail = {
   id: string;
-  noSurat: string;
+  // noSurat: string;
   orderName: string;
   orderEmail: string;
+  orderCode: string;
   status: string;
   confirmedAt?: string | null;
   createdAt?: string | null;
@@ -274,24 +276,25 @@ function DeliveryOrderShowPage() {
           style: {
             margin: "0",
             maxWidth: "none",
-            width: "1100px",
+            width: "1000px",
+            height: "1728px",
             boxShadow: "none",
             transform: "none",
           },
         });
 
         const pdf = new jsPDF({
-          orientation: "landscape", // Sesuai bentuk tabel yang lebar
-          unit: "mm",
-          format: "a4",
+          orientation: "portrait",
+          unit: "in",
+          format: [5.5, 9.5],
         });
 
         const imgProps = pdf.getImageProperties(dataUrl);
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
 
-        const marginX = 10;
-        const marginY = 10;
+        const marginX = 0;
+        const marginY = 0;
         const availableWidth = pdfWidth - marginX * 2;
         const availableHeight = pdfHeight - marginY * 2;
 
@@ -302,10 +305,10 @@ function DeliveryOrderShowPage() {
         const finalWidth = imgProps.width * scale;
         const finalHeight = imgProps.height * scale;
         const x = (pdfWidth - finalWidth) / 2;
-        const y = 10; // Top margin
+        const y = (pdfHeight - finalHeight) / 2;
 
         pdf.addImage(dataUrl, "PNG", x, y, finalWidth, finalHeight);
-        pdf.save(`SPB-${workOrder?.noSurat || id}.pdf`);
+        pdf.save(`SPB-${workOrder?.orderCode || id}.pdf`);
         toast.success("PDF downloaded successfully");
       } else {
         // --- LOGIKA EXCEL BARU SESUAI GAMBAR ---
@@ -329,7 +332,7 @@ function DeliveryOrderShowPage() {
           "Specialist Product : Cable tray, Duct, Ladder",
           null,
           null,
-          `NO SPB : ${workOrder?.noSurat || "-"}`,
+          `NO SPB : ${workOrder?.orderCode || "-"}`,
         ]);
         rows.push([null, null, null, `PO NO : ${workOrder?.project || "-"}`]);
         rows.push([
@@ -401,7 +404,7 @@ function DeliveryOrderShowPage() {
         // Simpelnya biarkan baris sesuai urutan push diatas.
 
         XLSX.utils.book_append_sheet(wb, ws, "SPB");
-        XLSX.writeFile(wb, `SPB-${workOrder?.noSurat || id}.xlsx`);
+        XLSX.writeFile(wb, `SPB-${workOrder?.orderCode || id}.xlsx`);
         toast.success("Excel downloaded successfully");
       }
     } catch (error) {
@@ -454,14 +457,14 @@ function DeliveryOrderShowPage() {
       {/* --- KERTAS / AREA PRINT --- */}
       <div
         ref={printRef}
-        className="max-w-[1000px] mx-auto bg-white p-8 shadow-md print:shadow-none print:p-0 text-black font-sans text-sm"
+        className="w-[1000px] h-[960px] mx-auto bg-white p-8 shadow-md print:shadow-none print:p-0 text-black font-sans text-sm"
       >
         {/* HEADER KOP SURAT */}
         <div className="flex justify-between mb-1">
           {/* Sisi Kiri Header */}
           <div className="w-1/2 flex items-center gap-3">
             {/* Logo */}
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <img
                 src={logoApp}
                 alt="Company Logo"
@@ -517,7 +520,7 @@ function DeliveryOrderShowPage() {
         </div>
 
         {/* TABEL BARANG */}
-        <div className="w-full mb-6">
+        <div className="w-full mb-8">
           <table className="w-full border-collapse border border-black text-sm">
             <thead>
               <tr className="bg-transparent text-center font-bold">
@@ -559,7 +562,7 @@ function DeliveryOrderShowPage() {
               )}
 
               {/* Baris Kosong untuk Padding agar tabel panjang */}
-              {[...Array(Math.max(0, 10 - workOrder.items.length))].map(
+              {[...Array(Math.max(0, 15 - workOrder.items.length))].map(
                 (_, idx) => (
                   <tr key={`empty-${idx}`}>
                     <td className="border border-black text-center p-1 h-8">
@@ -583,7 +586,7 @@ function DeliveryOrderShowPage() {
         <div className="grid grid-cols-4 gap-4 text-center text-sm font-medium">
           {/* Kolom 1: Penerima */}
           <div className="col-span-1">
-            <div className="mb-16">PENERIMA</div>
+            <div className="mb-20">PENERIMA</div>
             <div className="border-b border-black w-3/4 mx-auto mb-1"></div>
             <div>
               (
@@ -601,7 +604,7 @@ function DeliveryOrderShowPage() {
 
           {/* Kolom 3: QC */}
           <div className="col-span-1">
-            <div className="mb-16">QC</div>
+            <div className="mb-20">QC</div>
             <div className="border-b border-black w-3/4 mx-auto mb-1"></div>
             <div>
               (
@@ -612,7 +615,7 @@ function DeliveryOrderShowPage() {
 
           {/* Kolom 4: Logistik */}
           <div className="col-span-1">
-            <div className="mb-16">LOGISTIK</div>
+            <div className="mb-20">LOGISTIK</div>
             <div className="border-b border-black w-3/4 mx-auto mb-1"></div>
             <div>
               (
@@ -702,29 +705,16 @@ function DeliveryOrderShowPage() {
         <div className="flex gap-3">
           <button
             type="button"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:border-red-300 hover:text-red-600 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-sm font-medium rounded-lg border text-gray-700 border-red-300 hover:text-red-600 transition-all disabled:opacity-50"
             onClick={() => handleDownload("pdf")}
             disabled={downloading !== null}
           >
             {downloading === "pdf" ? (
               <CircleNotchIcon className="animate-spin w-4 h-4" />
             ) : (
-              <FilePdf weight="duotone" className="w-4 h-4" />
+              <FilePdfIcon weight="duotone" className="w-4 h-4 text-rose-500" />
             )}
             Download PDF
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:border-emerald-300 hover:text-emerald-600 transition-all disabled:opacity-50"
-            onClick={() => handleDownload("excel")}
-            disabled={downloading !== null}
-          >
-            {downloading === "excel" ? (
-              <CircleNotchIcon className="animate-spin w-4 h-4" />
-            ) : (
-              <FileXls weight="duotone" className="w-4 h-4" />
-            )}
-            Download Excel
           </button>
         </div>
       </div>

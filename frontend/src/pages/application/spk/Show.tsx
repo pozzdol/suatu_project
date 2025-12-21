@@ -12,10 +12,9 @@ import Permit from "@/components/Permit";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
 import {
   ArrowCircleLeftIcon,
-  FilePdf,
-  FileXls,
   CircleNotchIcon,
   PlayIcon,
+  FilePdfIcon,
 } from "@phosphor-icons/react";
 
 type WorkOrderItem = {
@@ -294,28 +293,28 @@ function SPKShowPage() {
           pixelRatio: 2,
           style: {
             margin: "0",
-            // padding: "16px",
             maxWidth: "none",
-            width: "1100px",
+            width: "1056px",
+            height: "912px",
             boxShadow: "none",
             transform: "none",
           },
         });
 
-        // 2. Setup PDF (A4 Landscape)
+        // 2. Setup PDF (Custom Size: 11" x 9.5")
         const pdf = new jsPDF({
           orientation: "landscape",
-          unit: "mm",
-          format: "a4",
+          unit: "in",
+          format: [11, 9.5],
         });
 
         const imgProps = pdf.getImageProperties(dataUrl);
-        const pdfWidth = pdf.internal.pageSize.getWidth(); // 297mm
-        const pdfHeight = pdf.internal.pageSize.getHeight(); // 210mm
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
 
-        // 3. Hitung Dimensi agar Fit penuh di halaman (dengan margin kecil)
-        const marginX = 0; // Margin horizontal (mm)
-        const marginY = 5; // Margin vertical (mm)
+        // 3. Hitung Dimensi agar Fit penuh di halaman
+        const marginX = 0;
+        const marginY = 0;
         const availableWidth = pdfWidth - marginX * 2;
         const availableHeight = pdfHeight - marginY * 2;
 
@@ -615,187 +614,281 @@ function SPKShowPage() {
       {/* Container Kertas */}
       <div
         ref={printRef}
-        className="max-w-[1000px] mx-auto bg-white p-4 md:p-8 shadow-md print:shadow-none print:p-0 text-black font-sans text-sm"
+        className="bg-white w-[1056px] mx-auto h-[912px] p-8 shadow-md print:shadow-none print:p-0"
       >
-        {/* HEADER SECTION */}
-        <div className="border-t border-l border-r border-black">
-          {/* Baris 1: Judul SPK */}
-          <div className="flex border-b border-black">
-            <div className="grow p-2 font-bold text-base md:text-lg">
-              FILE SPK DAN PENGIRIMAN NO : {workOrder.noSurat}
-            </div>
-          </div>
+        <table
+          className="w-full border-collapse border border-black text-xs table-fixed h-full"
+          style={{ fontFamily: '"Times New Roman", Times, serif' }}
+        >
+          {/* Definisi Lebar Kolom agar layout fix */}
+          <colgroup>
+            <col className="w-10" /> {/* No */}
+            <col className="w-[50px]" /> {/* Kode Barang */}
+            <col className="w-[300px]" /> {/* Uraian */}
+            <col className="w-20" /> {/* Jumlah */}
+            <col className="w-[45px]" /> {/* Kirim 1 */}
+            <col className="w-[45px]" /> {/* Kirim 2 */}
+            <col className="w-[45px]" /> {/* Kirim 3 */}
+            <col className="w-[45px]" /> {/* Kirim 4 */}
+            <col className="w-[45px]" /> {/* Kirim 5 */}
+            <col className="w-[45px]" /> {/* Kirim 6 */}
+            <col className="w-[150px]" /> {/* Keterangan */}
+          </colgroup>
 
-          {/* Baris 2: Detail Header */}
-          <div className="flex">
-            {/* Kolom Kiri */}
-            <div className="w-1/2 border-r border-black">
-              <div className="flex border-b border-black">
-                <div className="w-24 p-1 pl-2 font-medium">TGL :</div>
-                <div className="grow p-1 font-medium">
-                  {formatDateSimple(workOrder.createdAt)}
-                </div>
-              </div>
-              <div className="flex border-b border-black">
-                <div className="w-24 p-1 pl-2 font-medium">CUST :</div>
-                <div className="grow p-1 font-bold">
-                  {workOrder.orderName.toUpperCase()}
-                </div>
-              </div>
-              <div className="flex">
-                <div className="p-1 pl-2 font-medium">Status :</div>
-                <div className="grow p-1">
-                  {workOrder.status ? status[workOrder.status] : "-"}
-                </div>
-              </div>
-            </div>
-
-            {/* Kolom Tengah */}
-            <div className="w-[30%] border-r border-black">
-              <div className="flex border-b border-black">
-                <div className="w-20 p-1 pl-2">Proyek</div>
-                <div className="grow p-1">{workOrder.project}</div>
-              </div>
-              <div className="flex border-b border-black">
-                <div className="w-20 p-1 pl-2">Finishing</div>
-                <div className="grow p-1 font-bold">{workOrder.finishing}</div>
-              </div>
-              <div className="flex">
-                <div className="w-20 p-1 pl-2">Tebal</div>
-                <div className="grow p-1 font-bold">{workOrder.thickness}</div>
-              </div>
-            </div>
-
-            {/* Kolom Kanan (PPN) */}
-            <div className="grow flex items-center justify-center font-bold text-xl md:text-2xl">
-              PPN
-            </div>
-          </div>
-        </div>
-
-        {/* TABLE SECTION */}
-        <div className="w-full">
-          <table className="w-full border-collapse border border-black text-xs md:text-sm">
-            <thead>
-              <tr className="text-center font-bold">
-                <th className="border border-black p-1 w-10">No</th>
-                <th className="border border-black p-1 text-left pl-2">
-                  Uraian
-                </th>
-                <th className="border border-black p-1 w-24">Jumlah</th>
-                {/* 7 Kolom Kirim */}
-                {[...Array(7)].map((_, i) => (
-                  <th key={i} className="border border-black p-1 w-12">
-                    Kirim
-                  </th>
-                ))}
-                <th className="border border-black p-1 w-32">KETERANGAN</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Mapping Items */}
-              {workOrder.items.length > 0 ? (
-                workOrder.items.map((item, index) => {
-                  // Find delivery quantities for this product
-                  const deliveryQuantities =
-                    workOrder.deliveryOrders?.map((delivery) => {
-                      const deliveryItem = delivery.items.find(
-                        (dItem) => dItem.productName === item.productName
-                      );
-                      return deliveryItem?.quantity || 0;
-                    }) || [];
-
-                  return (
-                    <tr key={index} className="h-8">
-                      <td className="border border-black text-center p-1">
-                        {index + 1}
-                      </td>
-                      <td className="border border-black p-1 pl-2">
-                        {item.productName}
-                      </td>
-                      <td className="border border-black text-center p-1">
-                        {item.quantity} {item.unit || "PCS"}
-                      </td>
-                      {[...Array(7)].map((_, i) => (
-                        <td
-                          key={i}
-                          className="border border-black text-center p-1 text-xs"
-                        >
-                          {deliveryQuantities[i] ? deliveryQuantities[i] : ""}
-                        </td>
-                      ))}
-                      <td className="border border-black"></td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td
-                    colSpan={11}
-                    className="border border-black p-4 text-center italic"
-                  >
-                    No items available
-                  </td>
-                </tr>
-              )}
-
-              {/* Baris Kosong Tambahan */}
-              {[...Array(Math.max(0, 15 - workOrder.items.length))].map(
-                (_, idx) => (
-                  <tr key={`empty-${idx}`} className="h-8">
-                    <td className="border border-black"></td>
-                    <td className="border border-black"></td>
-                    <td className="border border-black"></td>
-                    {[...Array(7)].map((_, i) => (
-                      <td key={i} className="border border-black"></td>
-                    ))}
-                    <td className="border border-black"></td>
-                  </tr>
-                )
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* FOOTER SECTION */}
-        <div className="flex border-l border-r border-b border-black h-36">
-          {/* Bagian Kiri: NOTE */}
-          <div className="grow flex">
-            {/* Teks "NOTE" Vertikal */}
-            <div className="w-10 border-r border-black flex items-center justify-center bg-white">
-              <span
-                className="transform -rotate-90 font-bold tracking-widest text-gray-700 text-xs"
-                style={{ whiteSpace: "nowrap" }}
+          <thead>
+            {/* Baris 1: Judul Besar */}
+            <tr className="h-10">
+              <th
+                className="text-left px-2 font-bold text-lg border border-black uppercase"
+                colSpan={11}
               >
-                NOTE
-              </span>
-            </div>
-            {/* Area Kosong */}
-            <div className="grow p-2">{workOrder.note || "-"}</div>
-          </div>
+                FILE SPK DAN PENGIRIMAN NO : {workOrder.noSurat}
+              </th>
+            </tr>
 
-          {/* Bagian Kanan: Tanda Tangan */}
-          <div className="w-[40%] border-l border-black flex flex-col">
-            {/* Header Tanda Tangan */}
-            <div className="flex border-b border-black text-center font-bold bg-white h-8 items-center text-xs">
-              <div className="flex-1 border-r border-black h-full flex items-center justify-center">
+            {/* Bagian Header Informasi (TGL, Proyek, PPN) */}
+            {/* Menggunakan teknik colspan untuk membagi layout atas menjadi 3 blok visual */}
+
+            {/* Baris 2 Header */}
+            <tr className="h-8">
+              {/* Blok Kiri (Label) */}
+              <th
+                className="text-left px-2 font-bold border border-black align-middle"
+                colSpan={2}
+              >
+                TGL :
+              </th>
+              {/* Blok Kiri (Isi) - Mengambil sisa ruang Uraian */}
+              <th className="text-left px-2 font-normal border border-black align-middle">
+                {formatDateSimple(workOrder.createdAt)}
+              </th>
+
+              {/* Blok Tengah (Label & Isi) - Mengambil ruang Jumlah + sebagian Kirim */}
+              <th
+                className="text-left px-2 font-bold border border-black align-middle"
+                colSpan={2}
+              >
+                Proyek
+              </th>
+              <th
+                className="text-left px-2 font-normal border border-black align-middle"
+                colSpan={4}
+              >
+                {workOrder.project}
+              </th>
+
+              {/* Blok Kanan (PPN) - Merged Cell Besar */}
+              <th
+                className="text-center font-bold text-xl border border-black align-middle"
+                colSpan={2}
+                rowSpan={3}
+              >
+                PPN
+              </th>
+            </tr>
+
+            {/* Baris 3 Header */}
+            <tr className="h-8">
+              <th
+                className="text-left px-2 font-bold border border-black align-middle"
+                colSpan={2}
+              >
+                CUST :
+              </th>
+              <th className="text-left px-2 font-normal border border-black align-middle">
+                {workOrder.orderName.toUpperCase()}
+              </th>
+
+              <th
+                className="text-left px-2 font-bold border border-black align-middle"
+                colSpan={2}
+              >
+                Finishing
+              </th>
+              <th
+                className="text-left px-2 font-normal border border-black align-middle"
+                colSpan={4}
+              >
+                {workOrder.finishing}
+              </th>
+            </tr>
+
+            {/* Baris 4 Header */}
+            <tr className="h-8">
+              <th
+                className="text-left px-2 font-bold border border-black align-middle"
+                colSpan={2}
+              >
+                Status :
+              </th>
+              <th className="text-left px-2 font-normal border border-black align-middle">
+                {workOrder.status ? status[workOrder.status] : "-"}
+              </th>
+
+              <th
+                className="text-left px-2 font-bold  border border-black align-middle"
+                colSpan={2}
+              >
+                Tebal
+              </th>
+              <th
+                className="text-left px-2 font-normal border border-black align-middle"
+                colSpan={4}
+              >
+                {workOrder.thickness}
+              </th>
+            </tr>
+
+            {/* Baris Judul Kolom Tabel Utama */}
+            <tr className="h-8 bg-gray-50">
+              <th className="border border-black font-bold text-center">No</th>
+              <th
+                className="border border-black font-bold text-center"
+                colSpan={2}
+              >
+                Uraian
+              </th>
+              <th className="border border-black font-bold text-center">
+                Jumlah
+              </th>
+              <th className="border border-black font-bold text-center">
+                Kirim
+              </th>
+              <th className="border border-black font-bold text-center">
+                Kirim
+              </th>
+              <th className="border border-black font-bold text-center">
+                Kirim
+              </th>
+              <th className="border border-black font-bold text-center">
+                Kirim
+              </th>
+              <th className="border border-black font-bold text-center">
+                Kirim
+              </th>
+              <th className="border border-black font-bold text-center">
+                Kirim
+              </th>
+              <th className="border border-black font-bold text-center">
+                KETERANGAN
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {workOrder.items.length > 0 ? (
+              workOrder.items.map((item, index) => {
+                // Find delivery quantities for this product
+                const deliveryQuantities =
+                  workOrder.deliveryOrders?.map((delivery) => {
+                    const deliveryItem = delivery.items.find(
+                      (dItem) => dItem.productName === item.productName
+                    );
+                    return deliveryItem?.quantity || 0;
+                  }) || [];
+
+                return (
+                  <tr key={index} className="h-8">
+                    {/* Kolom No */}
+                    <td className="border border-black text-center align-middle px-1">
+                      {index + 1}
+                    </td>
+                    {/* Kolom Uraian */}
+                    <td
+                      className="border border-black text-left align-middle px-2"
+                      colSpan={2}
+                    >
+                      {item.productName}
+                    </td>
+                    {/* Kolom Jumlah */}
+                    <td className="border border-black text-center align-middle">
+                      {item.quantity} {item.unit || "PCS"}
+                    </td>
+                    {/* 6 Kolom Kirim */}
+                    {[...Array(6)].map((_, i) => (
+                      <td
+                        key={i}
+                        className="border border-black text-center align-middle"
+                      >
+                        {deliveryQuantities[i] ? deliveryQuantities[i] : ""}
+                      </td>
+                    ))}
+                    {/* Kolom Keterangan */}
+                    <td className="border border-black text-center align-middle"></td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td
+                  colSpan={10}
+                  className="border border-black p-4 text-center italic"
+                >
+                  No items available
+                </td>
+              </tr>
+            )}
+
+            {/* Baris Kosong Tambahan */}
+            {[...Array(Math.max(0, 15 - workOrder.items.length))].map(
+              (_, idx) => (
+                <tr key={`empty-${idx}`} className="h-8">
+                  <td className="border border-black"></td>
+                  <td className="border border-black" colSpan={2}></td>
+                  <td className="border border-black"></td>
+                  {[...Array(6)].map((_, i) => (
+                    <td key={i} className="border border-black"></td>
+                  ))}
+                  <td className="border border-black"></td>
+                </tr>
+              )
+            )}
+          </tbody>
+
+          <tfoot>
+            <tr>
+              {/* Bagian NOTE Vertical */}
+              <td
+                className="border border-black bg-white text-center align-middle p-0 w-[40px]"
+                rowSpan={2}
+              >
+                <div className="transform -rotate-90 font-bold tracking-widest text-xs whitespace-nowrap">
+                  NOTE
+                </div>
+              </td>
+              {/* Isi Note */}
+              <td
+                className="border border-black align-top p-2"
+                colSpan={5}
+                rowSpan={2}
+              >
+                {workOrder.note || "-"}
+              </td>
+              {/* Header Tanda Tangan */}
+              <td
+                className="border border-black text-center font-bold h-8 align-middle"
+                colSpan={2}
+              >
                 Adm
-              </div>
-              <div className="flex-2 border-r border-black h-full flex items-center justify-center">
+              </td>
+              <td
+                className="border border-black text-center font-bold h-8 align-middle"
+                colSpan={2}
+              >
                 Check By
-              </div>
-              <div className="flex-1 h-full flex items-center justify-center">
+              </td>
+              <td className="border border-black text-center font-bold h-8 align-middle">
                 PPIC
-              </div>
-            </div>
-            {/* Body Tanda Tangan */}
-            <div className="flex grow">
-              <div className="flex-1 border-r border-black"></div>
-              <div className="flex-2 border-r border-black"></div>
-              <div className="flex-1"></div>
-            </div>
-          </div>
-        </div>
+              </td>
+            </tr>
+            <tr>
+              {/* Kotak Tanda Tangan Kosong */}
+              <td className="border border-black h-24" colSpan={2}></td>
+              <td className="border border-black h-24" colSpan={2}></td>
+              <td className="border border-black h-24"></td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
 
       {/* Action Buttons */}
@@ -845,29 +938,16 @@ function SPKShowPage() {
         <div className="flex gap-3">
           <button
             type="button"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:border-red-300 hover:text-red-600 transition-all duration-200 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-sm font-medium rounded-lg border text-gray-700 cursor-pointer border-red-300 hover:text-red-600 transition-all duration-200 disabled:opacity-50"
             onClick={() => handleDownload("pdf")}
             disabled={downloading !== null}
           >
             {downloading === "pdf" ? (
               <CircleNotchIcon className="animate-spin w-4 h-4" />
             ) : (
-              <FilePdf weight="duotone" className="w-4 h-4" />
+              <FilePdfIcon weight="duotone" className="w-4 h-4 text-rose-500" />
             )}
             {downloading === "pdf" ? "Downloading..." : "Download PDF"}
-          </button>
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:border-emerald-300 hover:text-emerald-600 transition-all duration-200 disabled:opacity-50"
-            onClick={() => handleDownload("excel")}
-            disabled={downloading !== null}
-          >
-            {downloading === "excel" ? (
-              <CircleNotchIcon className="animate-spin w-4 h-4" />
-            ) : (
-              <FileXls weight="duotone" className="w-4 h-4" />
-            )}
-            {downloading === "excel" ? "Downloading..." : "Download Excel"}
           </button>
         </div>
       </div>
