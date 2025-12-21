@@ -457,7 +457,8 @@ function DeliveryOrderShowPage() {
       {/* --- KERTAS / AREA PRINT --- */}
       <div
         ref={printRef}
-        className="w-[1000px] h-[960px] mx-auto bg-white p-8 shadow-md print:shadow-none print:p-0 text-black font-sans text-sm"
+        style={{ fontFamily: '"Times New Roman", Times, serif' }}
+        className="w-[1000px] h-[1728px] mx-auto bg-white p-8 shadow-md print:shadow-none print:p-0 text-black font-sans text-sm"
       >
         {/* HEADER KOP SURAT */}
         <div className="flex justify-between mb-1">
