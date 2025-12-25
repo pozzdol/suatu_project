@@ -764,7 +764,7 @@ function DetailSpkPage() {
                   Created At
                 </p>
                 <p className="font-medium text-gray-900">
-                  {dayjs(workOrder.createdAt).format("DD MMMM YYYY - hh:mm")}
+                  {dayjs(workOrder.createdAt).format("DD MMMM YYYY - hh:mm A")}
                 </p>
               </div>
             </div>
@@ -973,7 +973,7 @@ function DetailSpkPage() {
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-sky-400 to-sky-600 h-2 rounded-full transition-all duration-500"
+                          className="bg-linear-to-r from-sky-400 to-sky-600 h-2 rounded-full transition-all duration-500"
                           style={{
                             width: `${
                               (product.deliveredQuantity /
@@ -1181,9 +1181,11 @@ function DetailSpkPage() {
                     type="button"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-sky-500 text-sm font-medium rounded-lg text-white hover:bg-sky-600 transition-all duration-200 disabled:opacity-50"
                     onClick={() => setShowDeliveryModal(true)}
-                    disabled={getProductDeliveryInfo().every(
-                      (p) => p.remainingQuantity === 0
-                    )}
+                    disabled={
+                      getProductDeliveryInfo().every(
+                        (p) => p.remainingQuantity === 0
+                      ) || creatingDelivery
+                    }
                   >
                     <TruckIcon weight="bold" className="w-4 h-4" />
                     Create Delivery Order
@@ -1214,7 +1216,7 @@ function DetailSpkPage() {
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <div
-                        className="bg-gradient-to-r from-sky-400 to-sky-600 h-2 rounded-full transition-all duration-500"
+                        className="bg-linear-to-r from-sky-400 to-sky-600 h-2 rounded-full transition-all duration-500"
                         style={{
                           width: `${
                             (product.deliveredQuantity /

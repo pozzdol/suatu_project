@@ -37,7 +37,7 @@ class OrdersController extends Controller
                 return [
                     'id' => $order->id,
                     'name' => $order->name,
-                    'email' => $order->email,
+                    'nopo' => $order->nopo,
                     'phone' => $order->phone,
                     'address' => $order->address,
                     'finishing' => $order->finishing,
@@ -54,6 +54,7 @@ class OrdersController extends Controller
                             'productId' => $item->product_id,
                             'productName' => $item->product->data['name'] ?? '',
                             'quantity' => $item->quantity,
+                            'remark' => $item->remark ?? '',
                         ];
                     }),
                     'workOrder' => $this->transformWorkOrder($order->workOrder),
@@ -62,7 +63,7 @@ class OrdersController extends Controller
 
             return $this->apiResponse(['orders' => $payload], 'Orders retrieved successfully.', true, 200);
         } catch (\Exception $e) {
-            Log::error('Order retrieval error: ' . $e->getMessage());
+            Log::error('Order retrieval error: '.$e->getMessage());
 
             return $this->apiError('Failed to retrieve orders.', null, 500);
         }
@@ -72,8 +73,8 @@ class OrdersController extends Controller
     {
         $rules = [
             'name' => 'required|string|max:255',
-            'email' => 'nullable|string|email|max:255',
-            'phone' => 'required|string|max:50',
+            'nopo' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:1000',
             'finishing' => 'nullable|string|max:255',
             'thickness' => 'nullable|string|max:50',
@@ -96,7 +97,7 @@ class OrdersController extends Controller
 
             $order = new Order;
             $order->name = $validated['name'];
-            $order->email = $validated['email'];
+            $order->nopo = $validated['nopo'];
             $order->phone = $validated['phone'] ?? null;
             $order->address = $validated['address'] ?? null;
             $order->status = 'draft';
@@ -105,7 +106,7 @@ class OrdersController extends Controller
             $payload = [
                 'id' => $order->id,
                 'name' => $order->name,
-                'email' => $order->email,
+                'nopo' => $order->nopo,
                 'phone' => $order->phone,
                 'address' => $order->address,
                 'finishing' => $order->finishing,
@@ -122,7 +123,7 @@ class OrdersController extends Controller
 
             return $this->apiResponse(['order' => $payload], 'Order created successfully.', true, 201);
         } catch (\Exception $e) {
-            Log::error('Order creation error: ' . $e->getMessage());
+            Log::error('Order creation error: '.$e->getMessage());
 
             return $this->apiError('Failed to create order.', null, 500);
         }
@@ -140,7 +141,7 @@ class OrdersController extends Controller
             $payload = [
                 'id' => $order->id,
                 'name' => $order->name,
-                'email' => $order->email,
+                'nopo' => $order->nopo,
                 'phone' => $order->phone,
                 'address' => $order->address,
                 'finishing' => $order->finishing,
@@ -148,6 +149,7 @@ class OrdersController extends Controller
                 'note' => $order->note,
                 'date_confirm' => $order->date_confirm,
                 'status' => $order->status,
+                'project' => $order->project,
                 'deleted' => $order->deleted,
                 'created_at' => $order->created_at,
                 'updated_at' => $order->updated_at,
@@ -157,6 +159,7 @@ class OrdersController extends Controller
                         'productId' => $item->product_id,
                         'productName' => $item->product->data['name'] ?? '',
                         'quantity' => $item->quantity,
+                        'remark' => $item->remark ?? '',
                     ];
                 }),
                 'workOrder' => $this->transformWorkOrder($order->workOrder),
@@ -164,7 +167,7 @@ class OrdersController extends Controller
 
             return $this->apiResponse(['order' => $payload], 'Order retrieved successfully.');
         } catch (\Exception $e) {
-            Log::error('Order retrieval error: ' . $e->getMessage());
+            Log::error('Order retrieval error: '.$e->getMessage());
 
             return $this->apiError('Failed to retrieve order.', null, 500);
         }
@@ -172,6 +175,8 @@ class OrdersController extends Controller
 
     public function update(Request $request, $id)
     {
+        Log::debug('OrdersController@update started', ['order_id' => $id, 'request_data' => $request->all()]);
+
         DB::beginTransaction();
 
         try {
@@ -183,17 +188,19 @@ class OrdersController extends Controller
 
             $rules = [
                 'name' => 'sometimes|required|string|max:255',
-                'email' => 'sometimes|nullable|string|email|max:255',
-                'phone' => 'sometimes|required|string|max:50',
+                'nopo' => 'sometimes|nullable|string|max:255',
+                'phone' => 'sometimes|nullable|string|max:50',
                 'address' => 'sometimes|nullable|string|max:1000',
                 'finishing' => 'sometimes|nullable|string|max:255',
                 'thickness' => 'sometimes|nullable|string|max:50',
                 'note' => 'sometimes|nullable|string|max:5000',
                 'date_confirm' => 'sometimes|nullable|date',
                 'status' => 'sometimes|required|string|in:draft,confirm',
+                'project' => 'sometimes|nullable|string|max:255',
                 'orderItems' => 'sometimes|required|array|min:1',
                 'orderItems.*.productId' => 'required|string|exists:product,id',
                 'orderItems.*.quantity' => 'required|integer|min:1',
+                'orderItems.*.remark' => 'nullable|string|max:255',
             ];
 
             $validator = Validator::make($request->all(), $rules);
@@ -230,8 +237,12 @@ class OrdersController extends Controller
             if (isset($validated['name'])) {
                 $order->name = $validated['name'];
             }
-            if (isset($validated['email'])) {
-                $order->email = $validated['email'];
+            if (isset($validated['nopo'])) {
+                $order->nopo = $validated['nopo'];
+            }
+            \Log::debug('ini request', $request->all());
+            if (isset($validated['project'])) {
+                $order->project = $validated['project'];
             }
             if (array_key_exists('phone', $validated)) {
                 $order->phone = $validated['phone'];
@@ -259,12 +270,14 @@ class OrdersController extends Controller
                             $existingItem->restore();
                         }
                         $existingItem->quantity = $item['quantity'];
+                        $existingItem->remark = $item['remark'] ?? null;
                         $existingItem->save();
                     } else {
                         $orderItem = new OrderItem;
                         $orderItem->order_id = $order->id;
                         $orderItem->product_id = $item['productId'];
                         $orderItem->quantity = $item['quantity'];
+                        $orderItem->remark = $item['remark'] ?? null;
                         $orderItem->save();
                     }
                 }
@@ -273,6 +286,8 @@ class OrdersController extends Controller
             }
 
             if ($targetStatus === 'confirm') {
+                Log::debug('Confirming order', ['order_id' => $order->id, 'status_change' => $originalStatus.' -> '.$targetStatus]);
+
                 $order->date_confirm = $validated['date_confirm'] ?? now();
                 $order->load('orderItems.product');
 
@@ -290,6 +305,7 @@ class OrdersController extends Controller
 
                 // FIX: Proses raw material usage dan trigger notifikasi
                 $usedRawMaterialIds = $this->processRawMaterialUsage($order);
+                Log::debug('Raw materials processed', ['order_id' => $order->id, 'used_raw_material_ids' => $usedRawMaterialIds]);
 
                 // Trigger low stock notification untuk raw materials yang digunakan
                 if (! empty($usedRawMaterialIds)) {
@@ -298,6 +314,7 @@ class OrdersController extends Controller
             }
 
             if ($targetStatus !== 'confirm' && $originalStatus === 'confirm') {
+                Log::debug('Reverting order from confirm status', ['order_id' => $order->id, 'original_status' => $originalStatus, 'target_status' => $targetStatus]);
                 $this->softDeleteWorkOrder($order);
                 $this->revertRawMaterialUsage($order);
             }
@@ -310,7 +327,7 @@ class OrdersController extends Controller
             $payload = [
                 'id' => $order->id,
                 'name' => $order->name,
-                'email' => $order->email,
+                'nopo' => $order->nopo,
                 'phone' => $order->phone,
                 'address' => $order->address,
                 'finishing' => $order->finishing,
@@ -327,6 +344,7 @@ class OrdersController extends Controller
                         'productId' => $item->product_id,
                         'productName' => $item->product->data['name'] ?? '',
                         'quantity' => $item->quantity,
+                        'remark' => $item->remark ?? '',
                     ];
                 }),
                 'workOrder' => $this->transformWorkOrder($order->workOrder),
@@ -337,7 +355,7 @@ class OrdersController extends Controller
             return $this->apiResponse(['order' => $payload], 'Order updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Order update error: ' . $e->getMessage());
+            Log::error('Order update error: '.$e->getMessage());
 
             return $this->apiError('Failed to update order.', null, 500);
         }
@@ -373,7 +391,7 @@ class OrdersController extends Controller
             return $this->apiResponse(null, 'Order deleted successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Order deletion error: ' . $e->getMessage());
+            Log::error('Order deletion error: '.$e->getMessage());
 
             return $this->apiError('Failed to delete order.', null, 500);
         }
@@ -410,7 +428,7 @@ class OrdersController extends Controller
 
             $message = "{$deletedCount} order(s) deleted successfully.";
             if (! empty($notFoundIds)) {
-                $message .= ' Not found: ' . implode(', ', $notFoundIds);
+                $message .= ' Not found: '.implode(', ', $notFoundIds);
             }
 
             DB::commit();
@@ -421,7 +439,7 @@ class OrdersController extends Controller
             ], $message);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Mass order deletion error: ' . $e->getMessage());
+            Log::error('Mass order deletion error: '.$e->getMessage());
 
             return $this->apiError('Failed to delete orders.', null, 500);
         }
@@ -454,6 +472,8 @@ class OrdersController extends Controller
      */
     private function createOrRestoreWorkOrder(Order $order, ?string $description = null): void
     {
+        Log::debug('Creating or restoring work order', ['order_id' => $order->id, 'description' => $description]);
+
         $relation = $order->workOrder();
         $existing = $relation->withTrashed()->first();
 
@@ -574,6 +594,8 @@ class OrdersController extends Controller
      */
     private function revertRawMaterialUsage(Order $order): void
     {
+        Log::debug('Reverting raw material usage', ['order_id' => $order->id]);
+
         $usages = RawMaterialUsage::where('order_id', $order->id)->get();
 
         foreach ($usages as $usage) {
@@ -585,6 +607,13 @@ class OrdersController extends Controller
                 $data['stock'] = $currentStock + (float) $usage->quantity_used;
                 $rawMaterial->data = $data;
                 $rawMaterial->save();
+
+                Log::debug('Reverted raw material stock', [
+                    'raw_material_id' => $usage->raw_material_id,
+                    'previous_stock' => $currentStock,
+                    'quantity_returned' => $usage->quantity_used,
+                    'new_stock' => $data['stock'],
+                ]);
             }
 
             $usage->forceDelete();
@@ -598,6 +627,8 @@ class OrdersController extends Controller
      */
     private function processRawMaterialUsage(Order $order): array
     {
+        Log::debug('Processing raw material usage', ['order_id' => $order->id]);
+
         $order->load('orderItems.product');
 
         $usedRawMaterialIds = [];
@@ -617,6 +648,14 @@ class OrdersController extends Controller
                     $data['stock'] = max(0, $currentStock - $quantityUsed);
                     $rawMaterial->data = $data;
                     $rawMaterial->save();
+
+                    Log::debug('Raw material stock reduced', [
+                        'raw_material_id' => $rawMaterialId,
+                        'raw_material_name' => $data['name'] ?? 'Unknown',
+                        'previous_stock' => $currentStock,
+                        'quantity_used' => $quantityUsed,
+                        'new_stock' => $data['stock'],
+                    ]);
 
                     RawMaterialUsage::create([
                         'order_id' => $order->id,

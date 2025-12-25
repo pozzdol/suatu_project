@@ -7,7 +7,14 @@ import { validatePermit } from "@/utils/validation";
 import Loading from "@/components/Loading";
 import Permit from "@/components/Permit";
 import { ArrowCircleLeftIcon, CircleNotchIcon } from "@phosphor-icons/react";
-import { Input, Select, InputNumber, Button, DatePicker } from "antd";
+import {
+  Input,
+  Select,
+  InputNumber,
+  Button,
+  DatePicker,
+  AutoComplete,
+} from "antd";
 import dayjs from "dayjs";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
@@ -15,15 +22,17 @@ import useDocumentTitle from "@/hooks/useDocumentTitle";
 interface OrderItem {
   productId: string;
   quantity: number;
+  remark?: string;
 }
 
 interface FormData {
   name: string;
   address: string;
   phone: string;
-  email: string;
+  nopo: string;
   status: string;
   finishing?: string;
+  project?: string;
   thickness?: number;
   note?: string;
   date_confirm?: string;
@@ -78,15 +87,21 @@ function OrdersEditPage() {
     name: "",
     address: "",
     phone: "",
-    email: "",
+    nopo: "",
     status: "draft",
-    orderItems: [{ productId: "", quantity: 1 }],
+    project: "",
+    finishing: "",
+    thickness: undefined,
+    note: "",
+    date_confirm: "",
+    orderItems: [{ productId: "", quantity: 1, remark: "" }],
   };
 
   const [originalData, setOriginalData] = useState<FormData>(initialFormData);
 
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
+  const [nameData, setNameData] = useState<Array<{ name: string }>>([]);
   const [products, setProducts] = useState<{ label: string; value: string }[]>(
     []
   );
@@ -98,12 +113,13 @@ function OrdersEditPage() {
       const response = await requestApi.get("/transactions/orders/edit/" + id);
       if (response && response.data.success) {
         const order = response.data.data.order;
-        setFormData({
+        const fetchedData: FormData = {
           name: order.name || "",
           address: order.address || "",
           phone: order.phone || "",
-          email: order.email || "",
+          nopo: order.nopo || "",
           status: order.status || "draft",
+          project: order.project || "",
           finishing: order.finishing || "",
           thickness: order.thickness ? parseFloat(order.thickness) : undefined,
           note: order.note || "",
@@ -111,23 +127,12 @@ function OrdersEditPage() {
           orderItems: order.orderItems.map((item: any) => ({
             productId: item.productId,
             quantity: item.quantity,
+            remark: item.remark || "",
           })),
-        });
-        setOriginalData({
-          name: order.name || "",
-          address: order.address || "",
-          phone: order.phone || "",
-          email: order.email || "",
-          status: order.status || "draft",
-          finishing: order.finishing || "",
-          thickness: order.thickness ? parseFloat(order.thickness) : undefined,
-          note: order.note || "",
-          date_confirm: order.date_confirm || "",
-          orderItems: order.orderItems.map((item: any) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-        });
+        };
+
+        setFormData(fetchedData);
+        setOriginalData(fetchedData);
       } else {
         toast.error("Failed to fetch order data");
       }
@@ -156,11 +161,35 @@ function OrdersEditPage() {
     }
   };
 
+  const fetchNames = async () => {
+    try {
+      const response = await requestApi.get("/transactions/orders/list");
+      if (response && response.data.success) {
+        const res = response.data.data.orders;
+        const dataOrder = res.map((item: any) => ({
+          name: item.name,
+        }));
+        setNameData(dataOrder);
+      }
+    } catch (error) {
+      console.error("Error fetching names:", error);
+    }
+  };
+
   useEffect(() => {
     fetchData();
     fetchProducts();
+    fetchNames();
   }, []);
   // STATE MANAGEMENT END
+
+  // HELPERS
+  const uniqueNames = Array.from(
+    new Set(nameData.map((item) => item.name))
+  ).map((name) => {
+    return { name };
+  });
+  // HELPERS END
 
   // FUNCTIONS
   const handleReset = () => {
@@ -170,7 +199,10 @@ function OrdersEditPage() {
   const addOrderItem = () => {
     setFormData({
       ...formData,
-      orderItems: [...formData.orderItems, { productId: "", quantity: 1 }],
+      orderItems: [
+        ...formData.orderItems,
+        { productId: "", quantity: 1, remark: "" },
+      ],
     });
   };
 
@@ -186,7 +218,7 @@ function OrdersEditPage() {
   const updateOrderItem = (
     index: number,
     field: keyof OrderItem,
-    value: string | number
+    value: any
   ) => {
     const newItems = [...formData.orderItems];
     newItems[index] = { ...newItems[index], [field]: value };
@@ -212,18 +244,8 @@ function OrdersEditPage() {
       return;
     }
 
-    if (formData.email.trim()) {
-      // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email.trim())) {
-        toast.error("Please enter a valid email address");
-        return;
-      }
-    }
-
     const normalizedFormData: Record<string, any> = {
       name: formData.name.trim(),
-      email: formData.email.trim(),
       status: formData.status,
       orderItems: formData.orderItems.filter((item) => item.productId),
     };
@@ -231,6 +253,10 @@ function OrdersEditPage() {
     if (normalizedFormData.orderItems.length === 0) {
       toast.error("At least one product is required");
       return;
+    }
+
+    if (formData.address.trim()) {
+      normalizedFormData.nopo = formData.nopo.trim();
     }
 
     if (formData.address.trim()) {
@@ -243,6 +269,10 @@ function OrdersEditPage() {
 
     if (formData.finishing?.trim()) {
       normalizedFormData.finishing = formData.finishing.trim();
+    }
+
+    if (formData.project?.trim()) {
+      normalizedFormData.project = formData.project.trim();
     }
 
     if (formData.thickness) {
@@ -272,7 +302,7 @@ function OrdersEditPage() {
       }
     } catch (error) {
       toast.error("Failed to create order");
-      console.error("Failed to create order:", error);
+      console.error("Failed to create order:");
     } finally {
       setSubmitting(false);
     }
@@ -321,22 +351,25 @@ function OrdersEditPage() {
             <label className="block text-sm font-medium text-gray-700">
               Name <span className="text-red-500 ml-1">*</span>
             </label>
-            <Input
-              type="text"
-              className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
+            <AutoComplete
+              options={uniqueNames.map((item) => ({ value: item.name }))}
+              className="mt-1 block w-full p-2 focus:ring-sky-500 focus:border-sky-500"
               size="large"
               allowClear
               placeholder="Enter Name"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
+              onChange={(value) => setFormData({ ...formData, name: value })}
+              filterOption={(inputValue, option) =>
+                (option?.value ?? "")
+                  .toLowerCase()
+                  .includes(inputValue.toLowerCase())
               }
             />
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Phone <span className="text-red-500 ml-1">*</span>
+              Phone
             </label>
             <Input
               type="tel"
@@ -353,26 +386,24 @@ function OrdersEditPage() {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Email{" "}
-              <span className="font-normal italic text-xs">(Optional)</span>
+              No. PO
             </label>
             <Input
-              type="email"
+              type="text"
               className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
               size="large"
               allowClear
-              placeholder="Enter Email Address"
-              value={formData.email}
+              placeholder="Enter No. PO"
+              value={formData.nopo}
               onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
+                setFormData({ ...formData, nopo: e.target.value })
               }
             />
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Address{" "}
-              <span className="font-normal italic text-xs">(Optional)</span>
+              Address
             </label>
             <Input.TextArea
               rows={4}
@@ -397,9 +428,8 @@ function OrdersEditPage() {
           </p>
         </div>
         <div className="p-6">
-          {/* Status Field */}
-          <div className="mb-6">
-            <div className="space-y-2 max-w-xs">
+          <div className="space-y-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 Status <span className="text-red-500 ml-1">*</span>
               </label>
@@ -417,13 +447,24 @@ function OrdersEditPage() {
                 ]}
               />
             </div>
-          </div>
-
-          <div className="space-y-4 mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                Finishing{" "}
-                <span className="font-normal italic text-xs">(Optional)</span>
+                Project
+              </label>
+              <Input
+                type="text"
+                className="w-full"
+                size="large"
+                placeholder="Select Status"
+                value={formData.project}
+                onChange={(e) =>
+                  setFormData({ ...formData, project: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Finishing
               </label>
               <Input
                 type="text"
@@ -440,8 +481,7 @@ function OrdersEditPage() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                Thickness{" "}
-                <span className="font-normal italic text-xs">(Optional)</span>
+                Thickness
               </label>
               <InputNumber
                 className="mt-1 block w-full!"
@@ -461,8 +501,7 @@ function OrdersEditPage() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                Date Confirm{" "}
-                <span className="font-normal italic text-xs">(Optional)</span>
+                Date Confirm
               </label>
               <DatePicker
                 className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
@@ -482,8 +521,7 @@ function OrdersEditPage() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
-                Note{" "}
-                <span className="font-normal italic text-xs">(Optional)</span>
+                Note
               </label>
               <Input.TextArea
                 rows={4}
@@ -538,7 +576,7 @@ function OrdersEditPage() {
                       }
                     />
                   </div>
-                  <div className="w-32">
+                  <div className="w-fit">
                     <InputNumber
                       className="w-full"
                       size="large"
@@ -547,6 +585,18 @@ function OrdersEditPage() {
                       value={item.quantity}
                       onChange={(value) =>
                         updateOrderItem(index, "quantity", value || 1)
+                      }
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input.TextArea
+                      className="w-full"
+                      rows={1}
+                      size="large"
+                      placeholder="Remark"
+                      value={item.remark}
+                      onChange={(e) =>
+                        updateOrderItem(index, "remark", e.target.value)
                       }
                     />
                   </div>

@@ -357,6 +357,7 @@ class DeliveryOrderController extends Controller
                 ];
             })->toArray();
         }
+        \Log::debug('Delivery Items:', $deliveryOrder->order->toArray());
 
         return [
             'id' => $deliveryOrder->id,
@@ -375,7 +376,7 @@ class DeliveryOrderController extends Controller
             'order' => $deliveryOrder->order ? [
                 'id' => $deliveryOrder->order->id,
                 'name' => $deliveryOrder->order->name,
-                'email' => $deliveryOrder->order->email,
+                'nopo' => $deliveryOrder->order->nopo,
                 'phone' => $deliveryOrder->order->phone,
                 'address' => $deliveryOrder->order->address,
                 'status' => $deliveryOrder->order->status,

@@ -91,7 +91,7 @@ function Login() {
             className="w-full p-2 border border-gray-300 rounded hover:border-primary-500! focus:border-primary-500!"
             disabled={isSubmitting}
           />
-          <Input
+          <Input.Password
             type="password"
             size="large"
             placeholder="Password"

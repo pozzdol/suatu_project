@@ -12,6 +12,7 @@ import { parseNumericFilter } from "@/utils/filterOperators";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
 import { Modal } from "antd";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
 
 type OrderItem = {
   productId: string;
@@ -22,7 +23,7 @@ type OrderItem = {
 type OrderData = Record<string, unknown> & {
   id: string;
   name: string;
-  email: string;
+  nopo: string;
   phone: string;
   address: string;
   status: string;
@@ -239,17 +240,17 @@ function OrdersIndexPage() {
         exportable: true,
       },
       {
-        label: "Email",
-        field: "email",
+        label: "Order Date",
+        field: "date_confirm",
         type: "text" as HeaderType,
-        showOnMobile: false,
+        showOnMobile: true,
         exportable: true,
       },
       {
-        label: "Phone",
-        field: "phone",
+        label: "No. PO",
+        field: "nopo",
         type: "text" as HeaderType,
-        showOnMobile: false,
+        showOnMobile: true,
         exportable: true,
       },
       {
@@ -390,7 +391,7 @@ function OrdersIndexPage() {
         onSelectionChange={setSelectedRows}
         isSortEnabled={true}
         isMultiSortEnabled={false}
-        defaultSorts={[{ field: "name", order: "asc", priority: 0 }]}
+        defaultSorts={[{ field: "date_confirm", order: "asc", priority: 0 }]}
         renderRow={(row) => {
           return (
             <>
@@ -412,10 +413,12 @@ function OrdersIndexPage() {
                 )}
               </td>
               <td className="py-2 px-4 text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.email || "-"}
+                {row.date_confirm
+                  ? dayjs(row.date_confirm).format("DD MMMM YYYY")
+                  : "-"}
               </td>
               <td className="py-2 px-4 text-xs font-mono text-gray-500 border-b border-gray-300">
-                {row.phone || "-"}
+                {row.nopo || "-"}
               </td>
               <td className="py-2 px-4 text-xs text-gray-500 border-b border-gray-300">
                 {Array.isArray(row.orderItems) && row.orderItems.length > 0 ? (

@@ -7,14 +7,14 @@ import { validatePermit } from "@/utils/validation";
 import Loading from "@/components/Loading";
 import Permit from "@/components/Permit";
 import { ArrowCircleLeftIcon, CircleNotchIcon } from "@phosphor-icons/react";
-import { Input } from "antd";
+import { AutoComplete, Input } from "antd";
 import useDocumentTitle from "@/hooks/useDocumentTitle";
 
 interface FormData {
   name: string;
   address: string;
   phone: string;
-  email: string;
+  nopo: string;
 }
 
 function OrdersCreatePage() {
@@ -64,14 +64,47 @@ function OrdersCreatePage() {
     name: "",
     address: "",
     phone: "",
-    email: "",
+    nopo: "",
   };
 
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [submitting, setSubmitting] = useState(false);
-
-  // Fetch products
+  const [nameData, setNameData] = useState<Array<{ name: string }>>([]);
   // STATE MANAGEMENT END
+
+  // FETCHING DATA
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const response = await requestApi.get("/transactions/orders/list");
+      if (response && response.data.success) {
+        const res = response.data.data.orders;
+        const dataOrder = res.map((item: any) => ({
+          name: item.name,
+        }));
+        setNameData(dataOrder);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  // FETCHING DATA END
+
+  // EFFECTS
+  useEffect(() => {
+    fetchData();
+  }, []);
+  // EFFECTS END
+
+  // HELPERS
+  const uniqueNames = Array.from(
+    new Set(nameData.map((item) => item.name))
+  ).map((name) => {
+    return { name };
+  });
+  // HELPERS END
 
   // FUNCTIONS
   const handleReset = () => {
@@ -86,24 +119,13 @@ function OrdersCreatePage() {
       return;
     }
 
-    if (!formData.phone.trim()) {
-      toast.error("Phone is required");
-      return;
-    }
-
-    // Validate email format
-    if (formData.email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email.trim())) {
-        toast.error("Please enter a valid email address");
-        return;
-      }
-    }
-
     const normalizedFormData: Record<string, any> = {
       name: formData.name.trim(),
-      email: formData.email.trim(),
     };
+
+    if (formData.nopo.trim()) {
+      normalizedFormData.nopo = formData.nopo.trim();
+    }
 
     if (formData.address.trim()) {
       normalizedFormData.address = formData.address.trim();
@@ -176,24 +198,25 @@ function OrdersCreatePage() {
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Name <span className="text-red-500 ml-1">*</span>
+              Name<span className="text-red-500 ml-1">*</span>
             </label>
-            <Input
-              type="text"
-              className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
+            <AutoComplete
+              options={uniqueNames.map((item) => ({ value: item.name }))}
+              className="mt-1 block w-full p-2 focus:ring-sky-500 focus:border-sky-500"
               size="large"
               allowClear
               placeholder="Enter Name"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
+              onChange={(value) => setFormData({ ...formData, name: value })}
+              filterOption={(inputValue, option) =>
+                option!.value.toUpperCase().includes(inputValue.toUpperCase())
               }
             />
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Phone <span className="text-red-500 ml-1">*</span>
+              Phone
             </label>
             <Input
               type="tel"
@@ -210,26 +233,24 @@ function OrdersCreatePage() {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Email{" "}
-              <span className="font-normal italic text-xs">(Optional)</span>
+              No. PO
             </label>
             <Input
-              type="email"
+              type="po"
               className="mt-1 block w-full border border-gray-300 p-2 focus:ring-sky-500 focus:border-sky-500"
               size="large"
               allowClear
-              placeholder="Enter Email Address"
-              value={formData.email}
+              placeholder="Enter No. PO"
+              value={formData.nopo}
               onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
+                setFormData({ ...formData, nopo: e.target.value })
               }
             />
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Address{" "}
-              <span className="font-normal italic text-xs">(Optional)</span>
+              Address
             </label>
             <Input.TextArea
               rows={4}
