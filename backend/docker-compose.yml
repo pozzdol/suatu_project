@@ -46,8 +46,9 @@ services:
         max-file: "3"
 
   db:
-    image: mysql:8.4.7
+    image: mysql:8.4
     container_name: wms_db
+    command: --innodb-lock-wait-timeout=3000 --upgrade=FORCE
     restart: unless-stopped
     ports:
       - "3306:3306"
