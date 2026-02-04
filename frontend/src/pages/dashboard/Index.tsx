@@ -20,11 +20,13 @@ import Loading from "@/components/Loading";
 
 // BarChart Component (moved outside main component)
 const BarChart = ({
-  orderQuantity,
-  deliveryQuantity,
+  categories,
+  orderData,
+  deliveryData,
 }: {
-  orderQuantity: number;
-  deliveryQuantity: number;
+  categories: string[];
+  orderData: number[];
+  deliveryData: number[];
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -33,104 +35,68 @@ const BarChart = ({
 
     const chart = echarts.init(chartRef.current);
 
-    // Warna gradient asli Anda
-    const originalGradient = new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-      { offset: 0, color: "#667eea" },
-      { offset: 1, color: "#764ba2" },
-    ]);
-
     const option = {
       tooltip: {
         trigger: "axis",
         backgroundColor: "rgba(255, 255, 255, 0.9)",
         borderColor: "#eee",
         borderWidth: 1,
-        textStyle: {
-          color: "#333",
-        },
-        axisPointer: {
-          type: "none", // Menghilangkan shadow pointer default agar lebih bersih
-        },
-        formatter: (params: any) => {
-          // Format tooltip dengan ribuan separator
-          const val = params[0].value;
-          return `${params[0].marker} <b>${
-            params[0].name
-          }</b>: ${val.toLocaleString()}`;
-        },
+        textStyle: { color: "#333" },
+        axisPointer: { type: "shadow" },
+      },
+      legend: {
+        data: ["Orders", "Deliveries"],
+        bottom: 0,
+        selectedMode: true,
       },
       grid: {
         left: "3%",
-        right: "10%", // Memberi ruang lebih untuk label
-        bottom: "3%",
+        right: "4%",
+        bottom: "10%",
         top: "5%",
         containLabel: true,
       },
       xAxis: {
         type: "value",
-        boundaryGap: [0, 0.01],
-        // Membuat garis grid putus-putus dan tipis
         splitLine: {
-          show: true,
-          lineStyle: {
-            type: "dashed",
-            color: "#e0e0e0",
-          },
+          lineStyle: { type: "dashed", color: "#eee" },
         },
-        // Menghilangkan label angka di bawah jika ingin sangat minimalis (opsional, saat ini saya biarkan ada tapi warnanya soft)
-        axisLabel: {
-          color: "#999",
-        },
+        axisLabel: { color: "#999" },
       },
       yAxis: {
         type: "category",
-        data: ["Total Order Quantity", "Total Delivery Quantity"],
-        // Agar urutan dari atas ke bawah (opsional, tergantung selera)
-        inverse: true,
-        // Menghilangkan garis vertikal sumbu Y
-        axisLine: { show: false },
-        axisTick: { show: false },
-        axisLabel: {
-          fontSize: 13,
-          fontWeight: 600,
-          color: "#555",
-          margin: 15,
-        },
+        data: categories,
+        axisTick: { alignWithLabel: true },
+        axisLine: { lineStyle: { color: "#eee" } },
+        axisLabel: { color: "#666" },
+        inverse: true, // Optional: to show latest month at top or bottom depending on preference, usually categories are top-to-bottom
       },
       series: [
         {
+          name: "Orders",
           type: "bar",
-          data: [orderQuantity, deliveryQuantity],
-          barWidth: 80, // Mengatur ketebalan batang agar pas
-
-          // Menampilkan background abu-abu tipis di belakang bar (Modern Look)
-          showBackground: true,
-          backgroundStyle: {
-            color: "rgba(180, 180, 180, 0.1)",
-            borderRadius: [0, 15, 15, 0],
-          },
-
+          data: orderData,
+          barGap: 0.1,
+          barMaxWidth: 30,
           itemStyle: {
-            color: originalGradient,
-            // Membuat sudut membulat (hanya sisi kanan)
-            borderRadius: [0, 15, 15, 0],
-            // Menambahkan bayangan halus sewarna dengan gradient
-            shadowBlur: 10,
-            shadowColor: "rgba(118, 75, 162, 0.3)",
-            shadowOffsetY: 5,
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "#667eea" },
+              { offset: 1, color: "#764ba2" },
+            ]),
+            borderRadius: [0, 4, 4, 0],
           },
-
-          label: {
-            show: true,
-            position: "right", // Posisi angka di sebelah kanan bar
-            distance: 10,
-            fontSize: 14,
-            fontWeight: "bold",
-            color: "#764ba2", // Menggunakan warna ungu tua dari gradient untuk teks
-            formatter: (params: any) => {
-              // Menambahkan koma untuk ribuan (contoh: 1,200)
-              return params.value.toLocaleString();
-            },
+        },
+        {
+          name: "Deliveries",
+          type: "bar",
+          data: deliveryData,
+          barMaxWidth: 30,
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: "#ff9a9e" },
+              { offset: 1, color: "#fecfef" },
+            ]),
+            borderRadius: [0, 4, 4, 0],
           },
         },
       ],
@@ -145,9 +111,9 @@ const BarChart = ({
       window.removeEventListener("resize", handleResize);
       chart.dispose();
     };
-  }, [orderQuantity, deliveryQuantity]);
+  }, [categories, orderData, deliveryData]);
 
-  return <div ref={chartRef} style={{ width: "100%", height: "300px" }} />;
+  return <div ref={chartRef} style={{ width: "100%", height: "350px" }} />;
 };
 
 function DashboardIndexPage() {
@@ -182,90 +148,94 @@ function DashboardIndexPage() {
 
   // STATE MANAGEMENT
   const [isLoading, setIsLoading] = useState(false);
-  const [orderData, setOrderData] = useState<any[]>([]);
-  const [deliveryData, setDeliveryData] = useState<any[]>([]);
-  // STATE MANAGEMENT END
+
+  // Chart Data State
+  const [monthlyData, setMonthlyData] = useState<{
+    categories: string[];
+    orders: number[];
+    deliveries: number[];
+  }>({
+    categories: [],
+    orders: [],
+    deliveries: [],
+  });
+
+  // HELPER TO GENERATE LAST 3 MONTHS
+  const getLast3Months = () => {
+    const months = [];
+    const today = new Date();
+    for (let i = 2; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      months.push({
+        name: d.toLocaleString('default', { month: 'long' }),
+        monthIndex: d.getMonth(),
+        year: d.getFullYear(),
+      });
+    }
+    return months;
+  };
 
   // FETCH DATA
-  const fetchOrderData = async () => {
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await requestApi.get("/transactions/orders/list");
-      if (res && res.data.success) {
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth();
-        const filteredOrders = res.data.data.orders.filter((order: any) => {
-          const orderDate = new Date(order.created_at || order.createdAt);
-          const orderYear = orderDate.getFullYear();
-          const orderMonth = orderDate.getMonth();
-          return orderYear === currentYear && orderMonth === currentMonth;
-        });
+      const [orderRes, deliveryRes] = await Promise.all([
+        requestApi.get("/transactions/orders/list"),
+        requestApi.get("/transactions/delivery-orders/list"),
+      ]);
 
-        const ordersWithQuantity = filteredOrders.map((order: any) => ({
-          ...order,
-          totalQuantity: order.orderItems.reduce(
-            (sum: number, item: any) => sum + item.quantity,
-            0
-          ),
-          itemCount: order.orderItems.length,
-        }));
-        setOrderData(ordersWithQuantity);
-      } else {
-        toast.error("Failed to fetch order data");
-      }
-    } catch (error) {
-      toast.error("Failed to fetch order data");
-      console.error("Failed to fetch order data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      const last3Months = getLast3Months();
 
-  const fetchDeliveryData = async () => {
-    setIsLoading(true);
-    try {
-      const res = await requestApi.get("/transactions/delivery-orders/list");
-      if (res && res.data.success) {
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth();
-        const filteredDeliveries = res.data.data.deliveryOrders.filter(
-          (order: any) => {
-            const orderDate = new Date(order.created_at || order.createdAt);
-            const orderYear = orderDate.getFullYear();
-            const orderMonth = orderDate.getMonth();
-            return orderYear === currentYear && orderMonth === currentMonth;
+      // Init counters
+      const stats = last3Months.map(m => ({
+        ...m,
+        orderTotal: 0,
+        deliveryTotal: 0
+      }));
+
+      // Process Orders
+      if (orderRes && orderRes.data.success) {
+        const orders = orderRes.data.data.orders;
+        orders.forEach((order: any) => {
+          const d = new Date(order.created_at || order.createdAt);
+          const match = stats.find(s => s.monthIndex === d.getMonth() && s.year === d.getFullYear());
+          if (match) {
+            const qty = order.orderItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
+            match.orderTotal += qty;
           }
-        );
-
-        const deliveryOrdersWithStats = filteredDeliveries.map(
-          (order: any) => ({
-            ...order,
-            // totalQuantity sudah ada dari API, tapi bisa dihitung juga:
-            calculatedQuantity: order.items.reduce(
-              (sum: number, item: any) => sum + item.quantity,
-              0
-            ),
-          })
-        );
-        setDeliveryData(deliveryOrdersWithStats);
-      } else {
-        toast.error("Failed to fetch delivery data");
+        });
       }
+
+      // Process Deliveries
+      if (deliveryRes && deliveryRes.data.success) {
+        const deliveries = deliveryRes.data.data.deliveryOrders;
+        deliveries.forEach((delivery: any) => {
+          const d = new Date(delivery.created_at || delivery.createdAt);
+          const match = stats.find(s => s.monthIndex === d.getMonth() && s.year === d.getFullYear());
+          if (match) {
+            // Check structure, some APIs might use 'items' or 'deliveryItems', user code used 'items'
+            const qty = (delivery.items || []).reduce((sum: number, item: any) => sum + item.quantity, 0);
+            match.deliveryTotal += qty;
+          }
+        });
+      }
+
+      setMonthlyData({
+        categories: stats.map(s => s.name),
+        orders: stats.map(s => s.orderTotal),
+        deliveries: stats.map(s => s.deliveryTotal),
+      });
+
     } catch (error) {
-      toast.error("Failed to fetch delivery data");
-      console.error("Failed to fetch delivery data:", error);
+      console.error("Failed to fetch dashboard data:", error);
+      toast.error("Failed to load dashboard data");
     } finally {
       setIsLoading(false);
     }
   };
-  // FETCH DATA END
 
-  // USE EFFECTS
   useEffect(() => {
-    fetchOrderData();
-    fetchDeliveryData();
+    fetchData();
   }, []);
   // USE EFFECTS END
 
@@ -421,14 +391,9 @@ function DashboardIndexPage() {
               </div>
             </div>
             <BarChart
-              orderQuantity={orderData.reduce(
-                (sum, order) => sum + order.totalQuantity,
-                0
-              )}
-              deliveryQuantity={deliveryData.reduce(
-                (sum, delivery) => sum + delivery.totalQuantity,
-                0
-              )}
+              categories={monthlyData.categories}
+              orderData={monthlyData.orders}
+              deliveryData={monthlyData.deliveries}
             />
             <span className="text-sm text-gray-500">
               *Data{" "}
