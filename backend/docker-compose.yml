@@ -49,7 +49,6 @@ services:
     image: mysql:8.4
     container_name: wms_db
     restart: unless-stopped
-    command: --default-authentication-plugin=mysql_native_password
     ports:
       - "3306:3306"
     environment:
