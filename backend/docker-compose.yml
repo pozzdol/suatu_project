@@ -48,7 +48,6 @@ services:
   db:
     image: mysql:8.4.7
     container_name: wms_db
-    command: --innodb-force-recovery=6
     restart: unless-stopped
     ports:
       - "3306:3306"
