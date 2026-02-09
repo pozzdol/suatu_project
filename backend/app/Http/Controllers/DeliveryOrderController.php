@@ -385,8 +385,8 @@ class DeliveryOrderController extends Controller
             'totalItems' => count($deliveryItems),
             'totalQuantity' => array_sum(array_column($deliveryItems, 'quantity')),
             'deleted' => $deliveryOrder->deleted,
-            'createdAt' => $deliveryOrder->created_at,
-            'updatedAt' => $deliveryOrder->updated_at,
+            'createdAt' => $deliveryOrder->order->workOrder->created_at,
+            'updatedAt' => $deliveryOrder->order->workOrder->updated_at,
         ];
     }
 }

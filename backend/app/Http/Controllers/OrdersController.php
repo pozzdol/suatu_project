@@ -46,8 +46,8 @@ class OrdersController extends Controller
                     'date_confirm' => $order->date_confirm,
                     'status' => $order->status,
                     'deleted' => $order->deleted,
-                    'created_at' => $order->created_at,
-                    'updated_at' => $order->updated_at,
+                    'created_at' => $order->workOrder->created_at,
+                    'updated_at' => $order->workOrder->updated_at,
                     'orderItems' => $order->orderItems->map(function ($item) {
                         return [
                             'id' => $item->id,

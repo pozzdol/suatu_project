@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Modal, Input, InputNumber, DatePicker } from "antd";
 import { toast } from "react-hot-toast";
-import { XIcon, PackageIcon, CalendarIcon } from "@phosphor-icons/react";
+import { XIcon, PackageIcon } from "@phosphor-icons/react";
 import dayjs from "dayjs";
 
 type ProductDeliveryItem = {
@@ -182,10 +182,10 @@ function DeliveryOrderModal({
             value={plannedDeliveryDate}
             onChange={(date) => setPlannedDeliveryDate(date)}
             format="DD MMM YYYY"
-            disabledDate={(current) => {
-              // Disable dates before today
-              return current && current < dayjs().startOf("day");
-            }}
+            // disabledDate={(current) => {
+            //   // Disable dates before today
+            //   return current && current < dayjs().startOf("day");
+            // }}
           />
         </div>
 
@@ -195,7 +195,7 @@ function DeliveryOrderModal({
             Products to Deliver
           </label>
 
-          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+          <div className="space-y-3 max-h-100 overflow-y-auto pr-2">
             {items.map((item, index) => (
               <div
                 key={item.productId}
