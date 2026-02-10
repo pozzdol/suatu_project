@@ -38,6 +38,7 @@ type WorkOrderDetail = {
   thickness?: string;
   project?: string;
   nopo?: string;
+  createdAtSpb?: string | null;
 };
 
 function DeliveryOrderShowPage() {
@@ -117,6 +118,7 @@ function DeliveryOrderShowPage() {
           thickness: "1,5MM",
           project: order.project || "-",
           nopo: order.order.nopo || "-",
+          createdAtSpb: order.createdAtSpb || null,
         };
 
         setWorkOrder(mappedOrder);
@@ -404,7 +406,7 @@ function DeliveryOrderShowPage() {
           rightY += Math.max(0, lines.length - 1) * lineH;
         };
 
-        addRightKV("TGL SPB", formatDateSimple(workOrder.createdAt) || "-");
+        addRightKV("TGL SPB", formatDateSimple(workOrder.createdAtSpb) || "-");
         addRightKV("NO SPB", workOrder.orderCode);
         addRightKV("PO NO", workOrder.nopo || "-");
 
@@ -610,7 +612,7 @@ function DeliveryOrderShowPage() {
             "",
             "TGL SPB",
             ":",
-            formatDateSimple(workOrder.createdAt) || "-",
+            formatDateSimple(workOrder.createdAtSpb) || "-",
           ])
         );
         ws_data.push(
@@ -1040,7 +1042,7 @@ function DeliveryOrderShowPage() {
             <div className="grid grid-cols-[80px_10px_1fr] text-xs">
               <div className="pl-4">TGL SPB</div>
               <div>:</div>
-              <div>{formatDateSimple(workOrder.createdAt)}</div>
+              <div>{formatDateSimple(workOrder.createdAtSpb)}</div>
 
               <div className="pl-4">NO SPB</div>
               <div>:</div>
