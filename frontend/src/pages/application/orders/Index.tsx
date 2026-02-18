@@ -407,7 +407,7 @@ function OrdersIndexPage() {
               <td className="py-2 px-4 text-xs text-gray-700 border-b border-gray-300">
                 <div className="font-medium">{row.name}</div>
                 {row.address && (
-                  <div className="text-gray-400 text-[10px] truncate max-w-[200px]">
+                  <div className="text-gray-400 text-[10px] truncate max-w-50">
                     {row.address}
                   </div>
                 )}
@@ -422,7 +422,7 @@ function OrdersIndexPage() {
               </td>
               <td className="py-2 px-4 text-xs text-gray-500 border-b border-gray-300">
                 {Array.isArray(row.orderItems) && row.orderItems.length > 0 ? (
-                  <div className="flex flex-wrap gap-1 max-w-[300px]">
+                  <div className="flex flex-wrap gap-1 max-w-75">
                     {row.orderItems.map((item: any, idx: number) => (
                       <span
                         key={idx}
