@@ -337,7 +337,7 @@ class RawMaterialUsageController extends Controller
                 'status' => $usage->workOrder->status,
             ] : null,
             'deleted' => $usage->deleted,
-            'created_at' => $usage->created_at,
+            'created_at' => $usage->workOrder->created_at ?? $usage->created_at,
             'updated_at' => $usage->updated_at,
         ];
     }
