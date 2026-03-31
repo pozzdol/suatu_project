@@ -1012,7 +1012,7 @@ function DeliveryOrderShowPage() {
       {/* --- DOCUMENT PREVIEW (HTML) --- */}
       <div
         style={{ fontFamily: '"Times New Roman", Times, serif' }}
-        className="w-[1000px] h-[1728px] mx-auto bg-white p-8 shadow-md print:shadow-none print:p-0 text-black font-sans text-sm"
+        className="w-250 h-432 mx-auto bg-white p-8 shadow-md print:shadow-none print:p-0 text-black font-sans text-sm"
       >
         {/* HEADER KOP SURAT */}
         <div className="flex justify-between mb-1">
@@ -1162,7 +1162,7 @@ function DeliveryOrderShowPage() {
         </div>
       </div>
 
-      <div className="flex justify-between gap-3 mt-6 print:hidden max-w-[1000px] mx-auto">
+      <div className="flex justify-between gap-3 mt-6 print:hidden max-w-250 mx-auto">
         <div className="flex gap-3">
           {workOrder.status === "pending" && isEditable && (
             <button
