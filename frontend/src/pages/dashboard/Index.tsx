@@ -160,17 +160,22 @@ function DashboardIndexPage() {
     deliveries: [],
   });
 
-  // HELPER TO GENERATE LAST 3 MONTHS
+  // HELPER TO GENERATE DATE RANGE (December 2025 - January 2026)
   const getLast3Months = () => {
     const months = [];
-    const today = new Date();
-    for (let i = 2; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    // Define the date range: December 2025 to January 2026
+    const startDate = new Date(2025, 11, 1); // December 2025
+    const endDate = new Date(2026, 0, 31); // January 2026
+    
+    let current = new Date(startDate);
+    while (current <= endDate) {
       months.push({
-        name: d.toLocaleString('default', { month: 'long' }),
-        monthIndex: d.getMonth(),
-        year: d.getFullYear(),
+        name: current.toLocaleString('default', { month: 'long' }),
+        monthIndex: current.getMonth(),
+        year: current.getFullYear(),
       });
+      // Move to next month
+      current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
     }
     return months;
   };
@@ -221,7 +226,7 @@ function DashboardIndexPage() {
       }
 
       setMonthlyData({
-        categories: stats.map(s => s.name),
+        categories: stats.map(s => `${s.name} ${s.year}`),
         orders: stats.map(s => s.orderTotal),
         deliveries: stats.map(s => s.deliveryTotal),
       });
@@ -397,10 +402,11 @@ function DashboardIndexPage() {
             />
             <span className="text-sm text-gray-500">
               *Data{" "}
-              {new Date().toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-              })}
+              {monthlyData.categories.length > 0
+                ? `from ${monthlyData.categories[0]} to ${
+                    monthlyData.categories[monthlyData.categories.length - 1]
+                  }`
+                : "for the last 3 months"}
             </span>
           </div>
         </div>
