@@ -7,7 +7,10 @@ return [
     'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
     // baca dari ENV dan explode jadi array
-    'allowed_origins' => array_filter(array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', '')))),
+    'allowed_origins' => array_values(array_unique(array_merge(
+        array_filter(array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', '')))),
+        ['https://project-101.fikriachmad.dev', 'http://localhost:3000']
+    ))),
 
     // jika Anda butuh pola wildcard gunakan allowed_origins_patterns
     'allowed_origins_patterns' => [],
